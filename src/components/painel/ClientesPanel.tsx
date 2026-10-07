@@ -1,5 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+type FilterKey = "all" | "email" | "birthday" | "notes";
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "all", label: "Todos" },
+  { key: "email", label: "Com e-mail" },
+  { key: "birthday", label: "Com aniversário" },
+  { key: "notes", label: "Com anotações" },
+];
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDateBR, formatLongDateBR } from "@/lib/schedule";
@@ -27,6 +37,8 @@ export function ClientesPanel() {
     formRef.current.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
   }, [draftKey]);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<FilterKey>("all");
 
   const { data: clients } = useQuery({
     queryKey: ["admin-clients"],
@@ -36,6 +48,21 @@ export function ClientesPanel() {
       return data;
     },
   });
+
+  const filtered = useMemo(() => {
+    const term = normalize(search.trim());
+    const digits = search.replace(/\D/g, "");
+    return (clients ?? []).filter((c) => {
+      if (filter === "email" && !c.email) return false;
+      if (filter === "birthday" && !c.birth_date) return false;
+      if (filter === "notes" && !c.notes) return false;
+      if (!term) return true;
+      if (normalize(c.name).includes(term)) return true;
+      if (c.email && normalize(c.email).includes(term)) return true;
+      if (digits && c.phone.replace(/\D/g, "").includes(digits)) return true;
+      return false;
+    });
+  }, [clients, search, filter]);
 
   const { data: history } = useQuery({
     queryKey: ["client-history", openId],
@@ -159,8 +186,64 @@ export function ClientesPanel() {
         </form>
       ) : null}
 
+      <div className="glass-soft space-y-3 rounded-2xl p-4">
+        <div className="relative">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nome, telefone ou e-mail"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 pr-10 text-sm outline-none"
+          />
+          {search ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Limpar busca"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-foreground/50"
+            >
+              ✕
+            </button>
+          ) : null}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => setFilter(f.key)}
+              className={
+                filter === f.key
+                  ? "rounded-xl bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+                  : "glass-soft rounded-xl px-3 py-1.5 text-xs font-semibold text-foreground/70"
+              }
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-foreground/50">
+          Exibindo {filtered.length} de {(clients ?? []).length} clientes
+        </p>
+      </div>
+
       <div className="space-y-3">
-        {(clients ?? []).map((client) => (
+        {clients && filtered.length === 0 ? (
+          <div className="glass-soft rounded-2xl p-5 text-center text-sm text-foreground/60">
+            Nenhum cliente encontrado.{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setSearch("");
+                setFilter("all");
+              }}
+              className="font-semibold text-primary underline"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        ) : null}
+        {filtered.map((client) => (
           <div key={client.id} className="glass-soft rounded-2xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-sm font-semibold">{client.name}</p>
