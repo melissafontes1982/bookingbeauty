@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { AparenciaSection } from "./AparenciaSection";
+import { BackupSection } from "./BackupSection";
 import { LogoSection } from "./LogoSection";
 
 export function ConfiguracoesPanel() {
@@ -102,6 +103,7 @@ export function ConfiguracoesPanel() {
       </form>
       <LogoSection />
       <AparenciaSection />
+      <BackupSection />
     </div>
   );
 }
