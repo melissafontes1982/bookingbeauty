@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDateBR, formatLongDateBR } from "@/lib/schedule";
@@ -18,6 +18,14 @@ const emptyDraft: Draft = { name: "", phone: "", email: "", birth_date: "", note
 export function ClientesPanel() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const draftKey = draft ? (draft.id ?? "new") : null;
+
+  useEffect(() => {
+    if (!draftKey || !formRef.current) return;
+    formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    formRef.current.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+  }, [draftKey]);
   const [openId, setOpenId] = useState<string | null>(null);
 
   const { data: clients } = useQuery({
@@ -87,6 +95,7 @@ export function ClientesPanel() {
 
       {draft ? (
         <form
+          ref={formRef}
           onSubmit={(e) => {
             e.preventDefault();
             save.mutate(draft);

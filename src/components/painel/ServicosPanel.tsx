@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatPriceEUR } from "@/lib/schedule";
@@ -26,6 +26,14 @@ const emptyDraft: Draft = {
 export function ServicosPanel() {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const draftKey = draft ? (draft.id ?? "new") : null;
+
+  useEffect(() => {
+    if (!draftKey || !formRef.current) return;
+    formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    formRef.current.querySelector<HTMLInputElement>("input")?.focus({ preventScroll: true });
+  }, [draftKey]);
 
   const { data: services } = useQuery({
     queryKey: ["admin-services"],
@@ -80,6 +88,7 @@ export function ServicosPanel() {
 
       {draft ? (
         <form
+          ref={formRef}
           onSubmit={(e) => {
             e.preventDefault();
             save.mutate(draft);
