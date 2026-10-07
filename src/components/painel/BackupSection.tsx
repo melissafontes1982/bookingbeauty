@@ -71,11 +71,11 @@ export function BackupSection() {
     if (!rows.length) throw new Error("Nenhum cliente válido encontrado (colunas name e phone são obrigatórias).");
     if (!confirm(`Importar ${rows.length} cliente(s)? Clientes com o mesmo telefone serão atualizados.`)) return "Importação cancelada.";
     const existing = await fetchAll("clients");
-    const byPhone = new Map(existing.map((c) => [String(c.phone).replace(/\D/g, ""), String(c.id)]));
+    const byPhone = new Map(existing.map((c) => [String(c["phone"]).replace(/\D/g, ""), String(c["id"])]));
     let created = 0, updated = 0;
     for (const r of rows) {
       const values = { name: r.name, phone: r.phone, email: nul(r.email), birth_date: nul(r.birth_date), notes: nul(r.notes) };
-      const id = byPhone.get(r.phone.replace(/\D/g, "")) ?? (uuidRe.test(r.id ?? "") && existing.some((c) => c.id === r.id) ? r.id : undefined);
+      const id = byPhone.get(r.phone.replace(/\D/g, "")) ?? (uuidRe.test(r.id ?? "") && existing.some((c) => c["id"] === r.id) ? r.id : undefined);
       if (id) {
         const { error } = await supabase.from("clients").update(values).eq("id", id);
         if (error) throw new Error(`Erro ao atualizar ${r.name}.`);
@@ -94,7 +94,7 @@ export function BackupSection() {
     if (!rows.length) throw new Error("Nenhum serviço válido encontrado (coluna name é obrigatória).");
     if (!confirm(`Importar ${rows.length} serviço(s)? Serviços com o mesmo nome serão atualizados.`)) return "Importação cancelada.";
     const existing = await fetchAll("services");
-    const byName = new Map(existing.map((s) => [String(s.name).toLowerCase().trim(), String(s.id)]));
+    const byName = new Map(existing.map((s) => [String(s["name"]).toLowerCase().trim(), String(s["id"])]));
     let created = 0, updated = 0;
     for (const r of rows) {
       const values = {
