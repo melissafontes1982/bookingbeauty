@@ -33,6 +33,7 @@ export function BackupSection() {
   const [busy, setBusy] = useState(false);
   const clientsInput = useRef<HTMLInputElement>(null);
   const servicesInput = useRef<HTMLInputElement>(null);
+  const apptInput = useRef<HTMLInputElement>(null);
   const fullInput = useRef<HTMLInputElement>(null);
 
   async function run(fn: () => Promise<string>) {
@@ -230,7 +231,7 @@ export function BackupSection() {
           <button disabled={busy} className={btn} onClick={() => exportCsv("clients", CLIENT_COLS, "clientes")}>Clientes (CSV)</button>
           <button disabled={busy} className={btn} onClick={() => exportCsv("services", SERVICE_COLS, "servicos")}>Serviços (CSV)</button>
           <button disabled={busy} className={btn} onClick={() => exportCsv("appointments", APPT_COLS, "agendamentos")}>Agendamentos (CSV)</button>
-          <button disabled={busy} className={primary} onClick={exportFull}>Backup completo</button>
+          <button disabled={busy} className={primary} onClick={exportFull}>Backup completo (ZIP)</button>
         </div>
       </div>
 
@@ -239,11 +240,13 @@ export function BackupSection() {
         <div className="flex flex-wrap gap-2">
           <button disabled={busy} className={btn} onClick={() => clientsInput.current?.click()}>Importar clientes (CSV)</button>
           <button disabled={busy} className={btn} onClick={() => servicesInput.current?.click()}>Importar serviços (CSV)</button>
+          <button disabled={busy} className={btn} onClick={() => apptInput.current?.click()}>Importar agendamentos (CSV)</button>
           <button disabled={busy} className={primary} onClick={() => fullInput.current?.click()}>Restaurar backup completo</button>
         </div>
         <input ref={clientsInput} type="file" accept=".csv,text/csv" hidden onChange={pick(importClients)} />
         <input ref={servicesInput} type="file" accept=".csv,text/csv" hidden onChange={pick(importServices)} />
-        <input ref={fullInput} type="file" accept=".json,application/json" hidden onChange={pick(importFull)} />
+        <input ref={apptInput} type="file" accept=".csv,text/csv" hidden onChange={pick(importAppointments)} />
+        <input ref={fullInput} type="file" accept=".zip,.json,application/zip,application/json" hidden onChange={pick(importFull)} />
       </div>
 
       {busy ? <p className="text-xs text-foreground/60">Processando…</p> : null}
