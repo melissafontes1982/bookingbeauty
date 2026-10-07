@@ -10,7 +10,6 @@ import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import {
   addDaysISO,
   buildContactWhatsAppLink,
-  buildWhatsAppLink,
   formatLongDateBR,
   formatPriceEUR,
   todayISO,
@@ -230,7 +229,7 @@ function BookingPage() {
             </div>
 
             {booking ? (
-              <Confirmation booking={booking} onReset={() => {
+              <Confirmation booking={booking} businessPhone={settings?.whatsapp_number ?? ""} onReset={() => {
                 setBooking(null);
                 setServiceId(null);
                 setTime(null);
@@ -417,15 +416,22 @@ function BookingPage() {
   );
 }
 
-function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => void }) {
-  const link = buildWhatsAppLink({
-    phone: booking.phone,
-    clientName: booking.name,
-    serviceName: booking.serviceName,
-    date: booking.date,
-    time: booking.time,
-    manageUrl: `${window.location.origin}/agendamento/${booking.token}`,
-  });
+function Confirmation({
+  booking,
+  businessPhone,
+  onReset,
+}: {
+  booking: Booking;
+  businessPhone: string;
+  onReset: () => void;
+}) {
+  const message =
+    `Olá! Acabei de agendar um horário pelo site:\n` +
+    `• *Serviço:* ${booking.serviceName}\n` +
+    `• *Data:* ${formatLongDateBR(booking.date)} às ${booking.time}\n` +
+    `• *Meu nome:* ${booking.name}\n` +
+    `Poderia confirmar, por favor?`;
+  const link = buildContactWhatsAppLink(businessPhone, message);
   const manageUrl = `/agendamento/${booking.token}`;
 
   return (
@@ -437,23 +443,20 @@ function Confirmation({ booking, onReset }: { booking: Booking; onReset: () => v
       <p className="text-sm text-foreground/60">
         {formatLongDateBR(booking.date)} às {booking.time} · {formatPriceEUR(booking.price)}
       </p>
-      <div className="mt-4 rounded-xl border border-border bg-mist/70 p-4 text-sm leading-relaxed text-foreground/70">
-        “Olá, <span className="font-semibold text-foreground">{booking.name}</span>! Seu agendamento
-        para <span className="font-semibold text-foreground">{booking.serviceName}</span> foi
-        realizado com sucesso para o dia{" "}
-        <span className="font-semibold text-foreground">{formatLongDateBR(booking.date)}</span> às{" "}
-        <span className="font-semibold text-foreground">{booking.time}</span>. Caso precise
-        desmarcar ou reagendar, use o link enviado nesta mensagem. Aguardamos você!”
+      <div className="mt-4 whitespace-pre-line rounded-xl border border-border bg-mist/70 p-4 text-sm leading-relaxed text-foreground/70">
+        “{message.replace(/\*/g, "")}”
       </div>
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <a
-          href={link}
-          target="_blank"
-          rel="noreferrer"
-          className="flex-1 rounded-xl bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
-        >
-          Enviar Confirmação no WhatsApp
-        </a>
+        {link ? (
+          <a
+            href={link}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 rounded-xl bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
+          >
+            Avisar o profissional no WhatsApp
+          </a>
+        ) : null}
         <a
           href={manageUrl}
           className="glass-soft rounded-xl px-5 py-3 text-center text-sm font-semibold text-foreground/70"
