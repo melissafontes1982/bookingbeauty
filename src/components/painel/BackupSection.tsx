@@ -13,6 +13,7 @@ const APPT_COLS = [
 
 const today = () => new Date().toISOString().slice(0, 10);
 const nul = (v?: string) => (v && v.trim() ? v.trim() : null);
+type Row = { id?: string; name: string; phone: string; email?: string; birth_date?: string; notes?: string; description?: string; duration_min?: string; buffer_min?: string; price?: string; active?: string };
 const uuidRe = /^[0-9a-f-]{36}$/i;
 
 export function BackupSection() {
@@ -66,7 +67,7 @@ export function BackupSection() {
     });
 
   async function importClients(file: File) {
-    const rows = parseCsv(await file.text()).filter((r) => r.name && r.phone);
+    const rows = (parseCsv(await file.text()) as unknown as Row[]).filter((r) => r.name && r.phone);
     if (!rows.length) throw new Error("Nenhum cliente válido encontrado (colunas name e phone são obrigatórias).");
     if (!confirm(`Importar ${rows.length} cliente(s)? Clientes com o mesmo telefone serão atualizados.`)) return "Importação cancelada.";
     const existing = await fetchAll("clients");
@@ -89,7 +90,7 @@ export function BackupSection() {
   }
 
   async function importServices(file: File) {
-    const rows = parseCsv(await file.text()).filter((r) => r.name);
+    const rows = (parseCsv(await file.text()) as unknown as Row[]).filter((r) => r.name);
     if (!rows.length) throw new Error("Nenhum serviço válido encontrado (coluna name é obrigatória).");
     if (!confirm(`Importar ${rows.length} serviço(s)? Serviços com o mesmo nome serão atualizados.`)) return "Importação cancelada.";
     const existing = await fetchAll("services");
@@ -115,7 +116,7 @@ export function BackupSection() {
   }
 
   async function importFull(file: File) {
-    let b: Record<string, Record<string, unknown>[]>;
+    let b: Partial<Record<string, Record<string, unknown>[]>> & { services?: unknown; clients?: unknown };
     try { b = JSON.parse(await file.text()); } catch { throw new Error("Arquivo de backup inválido."); }
     if (!b.services || !b.clients) throw new Error("Arquivo de backup inválido.");
     if (!confirm("Restaurar o backup completo? Registros existentes com o mesmo identificador serão substituídos pelos do arquivo.")) return "Restauração cancelada.";
