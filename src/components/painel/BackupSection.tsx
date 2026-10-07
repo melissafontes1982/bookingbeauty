@@ -1,8 +1,19 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import { useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { downloadFile, parseCsv, toCsv } from "@/lib/csv";
+
+type Table = "clients" | "services" | "appointments" | "schedule_settings" | "schedule_blocks" | "general_settings";
+const ZIP_FILES: [Table, string][] = [
+  ["general_settings", "configuracoes.csv"],
+  ["services", "servicos.csv"],
+  ["clients", "clientes.csv"],
+  ["schedule_settings", "horarios_funcionamento.csv"],
+  ["schedule_blocks", "bloqueios_agenda.csv"],
+  ["appointments", "agendamentos.csv"],
+];
 
 const CLIENT_COLS = ["id", "name", "phone", "email", "birth_date", "notes"];
 const SERVICE_COLS = ["id", "name", "description", "duration_min", "buffer_min", "price", "active"];
@@ -52,19 +63,68 @@ export function BackupSection() {
 
   const exportFull = () =>
     run(async () => {
-      const backup = {
-        version: 1,
-        created_at: new Date().toISOString(),
-        general_settings: await fetchAll("general_settings"),
-        services: await fetchAll("services"),
-        clients: await fetchAll("clients"),
-        schedule_settings: await fetchAll("schedule_settings"),
-        schedule_blocks: await fetchAll("schedule_blocks"),
-        appointments: await fetchAll("appointments"),
-      };
-      downloadFile(`backup-completo-${today()}.json`, JSON.stringify(backup, null, 2), "application/json");
-      return "Backup completo baixado.";
+      const files: Record<string, Uint8Array> = {};
+      for (const [table, file] of ZIP_FILES) {
+        const rows = await fetchAll(table);
+        const cols = rows[0] ? Object.keys(rows[0]) : [];
+        files[file] = strToU8(toCsv(cols, rows));
+      }
+      const zip = zipSync(files);
+      const url = URL.createObjectURL(new Blob([zip as BlobPart], { type: "application/zip" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `backup-completo-${today()}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      return "Backup completo (ZIP com planilhas CSV) baixado.";
     });
+
+  async function importAppointments(file: File) {
+    const rows = parseCsv(await file.text()).filter(
+      (r) => r["appointment_date"] && r["start_time"] && r["client_name"] && r["client_phone"] && r["service_name"],
+    );
+    if (!rows.length) throw new Error("Nenhum agendamento válido (colunas obrigatórias: appointment_date, start_time, client_name, client_phone, service_name).");
+    if (!confirm(`Importar ${rows.length} agendamento(s)? Agendamentos com o mesmo identificador serão atualizados.`)) return "Importação cancelada.";
+    const existingIds = new Set((await fetchAll("appointments")).map((a) => String(a["id"])));
+    const services = await fetchAll("services");
+    const svcByName = new Map(services.map((s) => [String(s["name"]).toLowerCase().trim(), s]));
+    const clientIds = new Set((await fetchAll("clients")).map((c) => String(c["id"])));
+    let created = 0, updated = 0;
+    for (const r of rows) {
+      const svc = svcByName.get(r["service_name"]!.toLowerCase().trim());
+      const start = r["start_time"]!;
+      let end = nul(r["end_time"]);
+      if (!end) {
+        const [h, m] = start.split(":").map(Number);
+        const t = (h ?? 0) * 60 + (m ?? 0) + Number(svc?.["duration_min"] ?? 60);
+        end = `${String(Math.floor(t / 60) % 24).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+      }
+      const values = {
+        appointment_date: r["appointment_date"]!,
+        start_time: start,
+        end_time: end,
+        client_name: r["client_name"]!,
+        client_phone: r["client_phone"]!,
+        service_name: r["service_name"]!,
+        status: nul(r["status"]) ?? "confirmado",
+        notes: nul(r["notes"]),
+        buffer_min: Number(r["buffer_min"] ?? svc?.["buffer_min"] ?? 0) || 0,
+        service_id: (nul(r["service_id"]) && services.some((s) => s["id"] === r["service_id"]) ? r["service_id"] : (svc?.["id"] as string | undefined)) ?? null,
+        client_id: nul(r["client_id"]) && clientIds.has(r["client_id"]!) ? r["client_id"]! : null,
+      };
+      const id = r["id"] && uuidRe.test(r["id"]) ? r["id"] : undefined;
+      if (id && existingIds.has(id)) {
+        const { error } = await supabase.from("appointments").update(values).eq("id", id);
+        if (error) throw new Error(`Erro ao atualizar agendamento de ${values.client_name}.`);
+        updated++;
+      } else {
+        const { error } = await supabase.from("appointments").insert(id ? { ...values, id } : values);
+        if (error) throw new Error(`Erro ao criar agendamento de ${values.client_name}.`);
+        created++;
+      }
+    }
+    return `Agendamentos: ${created} criado(s), ${updated} atualizado(s).`;
+  }
 
   async function importClients(file: File) {
     const rows = (parseCsv(await file.text()) as unknown as Row[]).filter((r) => r.name && r.phone);
@@ -116,16 +176,28 @@ export function BackupSection() {
   }
 
   async function importFull(file: File) {
-    let b: Partial<Record<string, Record<string, unknown>[]>> & { services?: unknown; clients?: unknown };
-    try { b = JSON.parse(await file.text()); } catch { throw new Error("Arquivo de backup inválido."); }
-    if (!b.services || !b.clients) throw new Error("Arquivo de backup inválido.");
+    const data: Partial<Record<string, Record<string, unknown>[]>> = {};
+    if (file.name.toLowerCase().endsWith(".json")) {
+      try { Object.assign(data, JSON.parse(await file.text())); } catch { throw new Error("Arquivo de backup inválido."); }
+    } else {
+      let entries: Record<string, Uint8Array>;
+      try { entries = unzipSync(new Uint8Array(await file.arrayBuffer())); } catch { throw new Error("Arquivo ZIP inválido."); }
+      for (const [table, name] of ZIP_FILES) {
+        const key = Object.keys(entries).find((k) => k.split("/").pop() === name);
+        if (!key) continue;
+        data[table] = parseCsv(strFromU8(entries[key]!)).map((r) =>
+          Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v === "" ? null : v])),
+        );
+      }
+    }
+    if (!data["services"] && !data["clients"] && !data["appointments"]) throw new Error("Arquivo de backup inválido.");
     if (!confirm("Restaurar o backup completo? Registros existentes com o mesmo identificador serão substituídos pelos do arquivo.")) return "Restauração cancelada.";
     const steps: [string, string][] = [
       ["general_settings", "id"], ["services", "id"], ["clients", "id"],
       ["schedule_settings", "weekday"], ["schedule_blocks", "id"], ["appointments", "id"],
     ];
     for (const [table, key] of steps) {
-      const rows = b[table];
+      const rows = data[table];
       if (!rows?.length) continue;
       const { error } = await supabase.from(table as "services").upsert(rows as never, { onConflict: key });
       if (error) throw new Error(`Erro ao restaurar ${table}: ${error.message}`);
