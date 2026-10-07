@@ -119,7 +119,7 @@ export function BackupSection() {
         if (error) throw new Error(`Erro ao atualizar agendamento de ${values.client_name}.`);
         updated++;
       } else {
-        const { error } = await supabase.from("appointments").insert(id ? { ...values, id } : values);
+        const { error } = await supabase.from("appointments").insert({ ...values, ...(id ? { id } : {}) });
         if (error) throw new Error(`Erro ao criar agendamento de ${values.client_name}.`);
         created++;
       }
