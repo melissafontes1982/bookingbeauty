@@ -10,7 +10,6 @@ import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import {
   addDaysISO,
   buildContactWhatsAppLink,
-  buildWhatsAppLink,
   formatLongDateBR,
   formatPriceEUR,
   todayISO,
