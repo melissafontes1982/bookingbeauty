@@ -1,0 +1,111 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-ink: var(--ink);
+  --color-mist: var(--mist);
+  --color-glass: var(--glass);
+  --color-glass-line: var(--glass-line);
+}
+
+:root {
+  --radius: 1rem;
+
+  /* Massoterapia e Estética palette */
+  --brand: oklch(0.56 0.048 165);
+  --brand-deep: oklch(0.385 0.043 168);
+  --ink: oklch(0.29 0.023 166);
+  --mist: oklch(0.955 0.008 170);
+  --glass: oklch(1 0 0);
+  --glass-line: oklch(1 0 0 / 60%);
+
+  --background: oklch(0.955 0.011 215);
+  --foreground: var(--ink);
+  --card: oklch(1 0 0 / 55%);
+  --card-foreground: var(--ink);
+  --popover: oklch(0.99 0.004 170);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand-deep);
+  --primary-foreground: oklch(0.985 0.004 170);
+  --secondary: oklch(1 0 0 / 60%);
+  --secondary-foreground: var(--ink);
+  --muted: oklch(0.94 0.008 190);
+  --muted-foreground: oklch(0.52 0.018 170);
+  --accent: oklch(0.71 0.108 55);
+  --accent-foreground: oklch(0.99 0.004 80);
+  --destructive: oklch(0.55 0.19 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --border: oklch(1 0 0 / 65%);
+  --input: oklch(1 0 0 / 70%);
+  --ring: var(--brand);
+
+  --gradient-spa: linear-gradient(135deg, oklch(0.9 0.022 230), oklch(0.945 0.014 175) 52%, oklch(0.94 0.017 75));
+  --shadow-glass: 0 20px 45px -25px oklch(0.385 0.043 168 / 35%);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background: var(--gradient-spa);
+    background-attachment: fixed;
+    color: var(--color-foreground);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@utility glass {
+  background: color-mix(in oklab, var(--color-glass) 50%, transparent);
+  backdrop-filter: blur(28px) saturate(140%);
+  border: 1px solid var(--glass-line);
+  box-shadow: var(--shadow-glass);
+}
+
+@utility glass-soft {
+  background: color-mix(in oklab, var(--color-glass) 60%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-glass) 70%, transparent);
+}
+
+@utility eyebrow {
+  font-size: 11px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: color-mix(in oklab, var(--brand-deep) 60%, transparent);
+}
