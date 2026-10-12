@@ -15,6 +15,9 @@ const bookingSchema = z.object({
   name: z.string().trim().min(2).max(120),
   phone: z.string().trim().min(8).max(30),
   notes: z.string().trim().max(500).optional(),
+  email: z.union([z.literal(""), z.string().trim().email().max(255)]).optional(),
+  nif: z.string().trim().max(20).optional(),
+  birthDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]).optional(),
 });
 
 async function loadDay(date: string, serviceId: string, excludeId?: string) {
@@ -96,11 +99,18 @@ export const createPublicBooking = createServerFn({ method: "POST" })
       .eq("phone", digits)
       .maybeSingle();
 
+    const extra: { email?: string; nif?: string; birth_date?: string } = {};
+    if (data.email) extra.email = data.email;
+    if (data.nif) extra.nif = data.nif;
+    if (data.birthDate) extra.birth_date = data.birthDate;
+
     let clientId = existing?.id ?? null;
-    if (!clientId) {
+    if (clientId) {
+      await supabaseAdmin.from("clients").update({ name: data.name, ...extra }).eq("id", clientId);
+    } else {
       const { data: created } = await supabaseAdmin
         .from("clients")
-        .insert({ name: data.name, phone: digits, notes: data.notes ?? null })
+        .insert({ name: data.name, phone: digits, notes: data.notes ?? null, ...extra })
         .select("id")
         .single();
       clientId = created?.id ?? null;

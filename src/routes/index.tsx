@@ -52,6 +52,9 @@ function BookingPage() {
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("351");
   const [notes, setNotes] = useState("");
+  const [email, setEmail] = useState("");
+  const [nif, setNif] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [booking, setBooking] = useState<Booking | null>(null);
@@ -124,7 +127,9 @@ function BookingPage() {
     setError(null);
     try {
       const fullPhone = `${countryCode}${phone.replace(/\D/g, "").replace(/^0+/, "")}`;
-      const result = await bookFn({ data: { serviceId, date, time, name, phone: fullPhone, notes } });
+      const result = await bookFn({
+        data: { serviceId, date, time, name, phone: fullPhone, notes, email, nif, birthDate },
+      });
       setBooking(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível agendar.");
@@ -236,6 +241,9 @@ function BookingPage() {
                 setName("");
                 setPhone("");
                 setNotes("");
+                setEmail("");
+                setNif("");
+                setBirthDate("");
               }} />
             ) : (
               <>
@@ -354,7 +362,7 @@ function BookingPage() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Nome completo"
+                      placeholder="Primeiro e último nome"
                       autoComplete="name"
                       className="rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                     />
@@ -382,11 +390,35 @@ function BookingPage() {
                         className="min-w-0 flex-1 rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                       />
                     </div>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="O seu e-mail"
+                      autoComplete="email"
+                      className="rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
+                    />
+                    <input
+                      value={nif}
+                      onChange={(e) => setNif(e.target.value)}
+                      placeholder="NIF (opcional)"
+                      inputMode="numeric"
+                      className="rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
+                    />
+                    <label className="text-xs text-foreground/60 sm:col-span-2">
+                      Data de nascimento (opcional)
+                      <input
+                        type="date"
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
+                        className="mt-1 w-full rounded-xl border border-border bg-input px-4 py-3 text-base text-foreground outline-none focus:ring-2 focus:ring-ring sm:text-sm"
+                      />
+                    </label>
                   </div>
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Alguma observação? (opcional)"
+                    placeholder="Observações (opcional)"
                     rows={2}
                     className="mt-3 w-full rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                   />

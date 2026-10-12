@@ -20,10 +20,11 @@ type Draft = {
   phone: string;
   email: string;
   birth_date: string;
+  nif: string;
   notes: string;
 };
 
-const emptyDraft: Draft = { name: "", phone: "", email: "", birth_date: "", notes: "" };
+const emptyDraft: Draft = { name: "", phone: "", email: "", birth_date: "", nif: "", notes: "" };
 
 export function ClientesPanel() {
   const queryClient = useQueryClient();
@@ -86,6 +87,7 @@ export function ClientesPanel() {
         phone: value.phone.replace(/\D/g, ""),
         email: value.email || null,
         birth_date: value.birth_date || null,
+        nif: value.nif || null,
         notes: value.notes || null,
       };
       const { error } = value.id
@@ -146,6 +148,12 @@ export function ClientesPanel() {
                 className="mt-1 w-full rounded-xl border border-border bg-input px-4 py-2.5 text-sm text-foreground outline-none"
               />
             </label>
+            <input
+              value={draft.nif}
+              onChange={(e) => setDraft({ ...draft, nif: e.target.value })}
+              placeholder="NIF"
+              className="rounded-xl border border-border bg-input px-4 py-3 text-sm outline-none"
+            />
             <input
               required
               value={draft.phone}
@@ -252,6 +260,9 @@ export function ClientesPanel() {
             {client.email ? (
               <p className="mt-1 text-xs text-foreground/50">{client.email}</p>
             ) : null}
+            {client.nif ? (
+              <p className="mt-1 text-xs text-foreground/50">NIF: {client.nif}</p>
+            ) : null}
             {client.birth_date ? (
               <p className="mt-1 text-xs text-foreground/50">
                 Aniversário: {formatDateBR(client.birth_date)}
@@ -277,6 +288,7 @@ export function ClientesPanel() {
                     phone: client.phone,
                     email: client.email ?? "",
                     birth_date: client.birth_date ?? "",
+                    nif: client.nif ?? "",
                     notes: client.notes ?? "",
                   })
                 }
