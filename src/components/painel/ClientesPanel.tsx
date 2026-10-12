@@ -285,6 +285,7 @@ export function ClientesPanel() {
                     phone: client.phone,
                     email: client.email ?? "",
                     birth_date: client.birth_date ?? "",
+                    nif: client.nif ?? "",
                     notes: client.notes ?? "",
                   })
                 }

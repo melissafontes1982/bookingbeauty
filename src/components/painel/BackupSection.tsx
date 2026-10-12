@@ -15,7 +15,7 @@ const ZIP_FILES: [Table, string][] = [
   ["appointments", "agendamentos.csv"],
 ];
 
-const CLIENT_COLS = ["id", "name", "phone", "email", "birth_date", "notes"];
+const CLIENT_COLS = ["id", "name", "phone", "email", "nif", "birth_date", "notes"];
 const SERVICE_COLS = ["id", "name", "description", "duration_min", "buffer_min", "price", "active"];
 const APPT_COLS = [
   "id", "appointment_date", "start_time", "end_time", "client_name", "client_phone",
@@ -24,7 +24,7 @@ const APPT_COLS = [
 
 const today = () => new Date().toISOString().slice(0, 10);
 const nul = (v?: string) => (v && v.trim() ? v.trim() : null);
-type Row = { id?: string; name: string; phone: string; email?: string; birth_date?: string; notes?: string; description?: string; duration_min?: string; buffer_min?: string; price?: string; active?: string };
+type Row = { id?: string; name: string; phone: string; email?: string; nif?: string; birth_date?: string; notes?: string; description?: string; duration_min?: string; buffer_min?: string; price?: string; active?: string };
 const uuidRe = /^[0-9a-f-]{36}$/i;
 
 export function BackupSection() {
@@ -135,7 +135,7 @@ export function BackupSection() {
     const byPhone = new Map(existing.map((c) => [String(c["phone"]).replace(/\D/g, ""), String(c["id"])]));
     let created = 0, updated = 0;
     for (const r of rows) {
-      const values = { name: r.name, phone: r.phone, email: nul(r.email), birth_date: nul(r.birth_date), notes: nul(r.notes) };
+      const values = { name: r.name, phone: r.phone, email: nul(r.email), nif: nul(r.nif), birth_date: nul(r.birth_date), notes: nul(r.notes) };
       const id = byPhone.get(r.phone.replace(/\D/g, "")) ?? (uuidRe.test(r.id ?? "") && existing.some((c) => c["id"] === r.id) ? r.id : undefined);
       if (id) {
         const { error } = await supabase.from("clients").update(values).eq("id", id);
