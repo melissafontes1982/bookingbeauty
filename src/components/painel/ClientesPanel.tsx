@@ -260,6 +260,9 @@ export function ClientesPanel() {
             {client.email ? (
               <p className="mt-1 text-xs text-foreground/50">{client.email}</p>
             ) : null}
+            {client.nif ? (
+              <p className="mt-1 text-xs text-foreground/50">NIF: {client.nif}</p>
+            ) : null}
             {client.birth_date ? (
               <p className="mt-1 text-xs text-foreground/50">
                 Aniversário: {formatDateBR(client.birth_date)}
