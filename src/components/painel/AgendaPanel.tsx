@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
+import { LembretesSection } from "./LembretesSection";
 import { supabase } from "@/integrations/supabase/client";
 import {
   addDaysISO,
@@ -96,6 +97,7 @@ export function AgendaPanel() {
 
   return (
     <div className="space-y-6">
+      <LembretesSection />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="eyebrow">Painel do profissional</p>
