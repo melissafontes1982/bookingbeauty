@@ -129,14 +129,19 @@ export function buildWhatsAppLink(params: {
   serviceName: string;
   date: string;
   time: string;
-  kind?: "confirm" | "cancel";
+  kind?: "confirm" | "cancel" | "remind";
   manageUrl?: string;
 }): string {
   const digits = params.phone.replace(/\D/g, "");
   // Numbers are stored with country code; bare 9-digit numbers default to Portugal.
   const withCountry = digits.length <= 9 ? `351${digits}` : digits;
   const message =
-    params.kind === "cancel"
+    params.kind === "remind"
+      ? `Olá, *${params.clientName}*! Passando para lembrar do seu horário de *${params.serviceName}* ` +
+        `amanhã, dia *${formatDateBR(params.date)}*, às *${params.time}*. ` +
+        (params.manageUrl ? `Se precisar cancelar ou reagendar: ${params.manageUrl}. ` : "") +
+        `Até breve!`
+      : params.kind === "cancel"
       ? `Olá, *${params.clientName}*! Informamos que o seu agendamento para *${params.serviceName}* ` +
         `marcado para o dia *${formatDateBR(params.date)}* às *${params.time}* foi cancelado. ` +
         `Caso deseje reagendar para outra data ou tenha qualquer dúvida, estamos à disposição.`
@@ -155,14 +160,18 @@ export function buildSmsLink(params: {
   serviceName: string;
   date: string;
   time: string;
-  kind?: "confirm" | "cancel";
+  kind?: "confirm" | "cancel" | "remind";
   manageUrl?: string;
 }): string {
   const digits = params.phone.replace(/\D/g, "");
   const withCountry = digits.length <= 9 ? `351${digits}` : digits;
   const d = formatDateBR(params.date);
   const message =
-    params.kind === "cancel"
+    params.kind === "remind"
+      ? `Olá, ${params.clientName}! Lembrete do seu horário de ${params.serviceName} amanhã, dia ${d}, às ${params.time}. ` +
+        (params.manageUrl ? `Para cancelar ou reagendar: ${params.manageUrl}. ` : "") +
+        `Até breve!`
+      : params.kind === "cancel"
       ? `Olá, ${params.clientName}! Informamos que o seu agendamento para ${params.serviceName} marcado para o dia ${d} às ${params.time} foi cancelado. Caso deseje reagendar ou tenha qualquer dúvida, estamos à disposição.`
       : `Olá, ${params.clientName}! Seu agendamento para ${params.serviceName} foi confirmado para o dia ${d} às ${params.time}. ` +
         (params.manageUrl
