@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
-import { addDaysISO, buildSmsLink, buildWhatsAppLink, formatLongDateBR, todayISO } from "@/lib/schedule";
+import { LangToggle } from "./LangToggle";
+import { addDaysISO, detectLang, type MsgLang, buildSmsLink, buildWhatsAppLink, formatLongDateBR, todayISO } from "@/lib/schedule";
 
 const STORAGE_KEY = "lembretes-enviados";
 
 export function LembretesSection() {
   const tomorrow = addDaysISO(todayISO(), 1);
+  const [langs, setLangs] = useState<Record<string, MsgLang>>({});
   const [sent, setSent] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -61,6 +63,7 @@ export function LembretesSection() {
               date: a.appointment_date,
               time: a.start_time.slice(0, 5),
               kind: "remind" as const,
+              lang: langs[a.id] ?? detectLang(a.client_phone),
               manageUrl: `${window.location.origin}/agendamento/${a.manage_token}`,
             };
             return (
@@ -72,7 +75,8 @@ export function LembretesSection() {
                   </p>
                   <p className="text-xs text-foreground/60">{a.service_name}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <LangToggle value={params.lang} onChange={(l) => setLangs({ ...langs, [a.id]: l })} />
                   <a
                     href={buildWhatsAppLink(params)}
                     target="_blank"

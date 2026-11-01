@@ -122,39 +122,25 @@ export function buildContactWhatsAppLink(phone: string, message?: string): strin
   return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 }
 
-/** Monta o link do WhatsApp Web com a mensagem de confirmação codificada. */
-export function buildWhatsAppLink(params: {
-  phone: string;
-  clientName: string;
-  serviceName: string;
-  date: string;
-  time: string;
-  kind?: "confirm" | "cancel" | "remind";
-  manageUrl?: string;
-}): string {
-  const digits = params.phone.replace(/\D/g, "");
-  // Numbers are stored with country code; bare 9-digit numbers default to Portugal.
-  const withCountry = digits.length <= 9 ? `351${digits}` : digits;
-  const message =
-    params.kind === "remind"
-      ? `Olá, *${params.clientName}*! Passando para lembrar do seu horário de *${params.serviceName}* ` +
-        `amanhã, dia *${formatDateBR(params.date)}*, às *${params.time}*. ` +
-        (params.manageUrl ? `Se precisar cancelar ou reagendar: ${params.manageUrl}. ` : "") +
-        `Até breve!`
-      : params.kind === "cancel"
-      ? `Olá, *${params.clientName}*! Informamos que o seu agendamento para *${params.serviceName}* ` +
-        `marcado para o dia *${formatDateBR(params.date)}* às *${params.time}* foi cancelado. ` +
-        `Caso deseje reagendar para outra data ou tenha qualquer dúvida, estamos à disposição.`
-      : `Olá, *${params.clientName}*! Seu agendamento para *${params.serviceName}* ` +
-        `foi realizado com sucesso para o dia *${formatDateBR(params.date)}* às *${params.time}*. ` +
-        (params.manageUrl
-          ? `Para cancelar ou reagendar, acesse: ${params.manageUrl} (use os 4 últimos dígitos do seu WhatsApp). Aguardamos você!`
-          : `Caso precise desmarcar ou reagendar, entre em contato conosco. Aguardamos você!`);
-  return `https://wa.me/${withCountry}?text=${encodeURIComponent(message)}`;
+export type MsgLang = "pt" | "en";
+
+const PT_CODES = ["351", "55", "244", "258", "238", "245", "239", "670"];
+
+/** Sugere o idioma pelo código do país do telefone (lusófono = PT, resto = EN). */
+export function detectLang(phone: string): MsgLang {
+  const d = phone.replace(/\D/g, "");
+  if (d.length <= 9) return "pt";
+  return PT_CODES.some((c) => d.startsWith(c)) ? "pt" : "en";
 }
 
-/** Monta um link sms: (app de Mensagens do telemóvel) com texto puro. */
-export function buildSmsLink(params: {
+function formatDateEN(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
+  });
+}
+
+type MsgParams = {
   phone: string;
   clientName: string;
   serviceName: string;
@@ -162,22 +148,52 @@ export function buildSmsLink(params: {
   time: string;
   kind?: "confirm" | "cancel" | "remind";
   manageUrl?: string;
-}): string {
-  const digits = params.phone.replace(/\D/g, "");
-  const withCountry = digits.length <= 9 ? `351${digits}` : digits;
-  const d = formatDateBR(params.date);
-  const message =
-    params.kind === "remind"
-      ? `Olá, ${params.clientName}! Lembrete do seu horário de ${params.serviceName} amanhã, dia ${d}, às ${params.time}. ` +
-        (params.manageUrl ? `Para cancelar ou reagendar: ${params.manageUrl}. ` : "") +
-        `Até breve!`
-      : params.kind === "cancel"
-      ? `Olá, ${params.clientName}! Informamos que o seu agendamento para ${params.serviceName} marcado para o dia ${d} às ${params.time} foi cancelado. Caso deseje reagendar ou tenha qualquer dúvida, estamos à disposição.`
-      : `Olá, ${params.clientName}! Seu agendamento para ${params.serviceName} foi confirmado para o dia ${d} às ${params.time}. ` +
-        (params.manageUrl
-          ? `Para cancelar ou reagendar: ${params.manageUrl} (use os 4 últimos dígitos do seu telemóvel).`
-          : `Caso precise desmarcar, entre em contato conosco.`);
-  return `sms:+${withCountry}?body=${encodeURIComponent(message)}`;
+  lang?: MsgLang;
+};
+
+function buildMessage(p: MsgParams, bold: boolean): string {
+  const b = (t: string) => (bold ? `*${t}*` : t);
+  const lang = p.lang ?? detectLang(p.phone);
+  const n = b(p.clientName), s = b(p.serviceName), t = b(p.time);
+  if (lang === "en") {
+    const d = b(formatDateEN(p.date));
+    if (p.kind === "remind")
+      return `Hello, ${n}! Friendly reminder of your ${s} appointment tomorrow, ${d}, at ${t}. ` +
+        (p.manageUrl ? `To cancel or reschedule: ${p.manageUrl}. ` : "") + `See you soon!`;
+    if (p.kind === "cancel")
+      return `Hello, ${n}! We would like to inform you that your ${s} appointment scheduled for ${d} at ${t} has been cancelled. ` +
+        `If you would like to reschedule or have any questions, we are happy to help.`;
+    return `Hello, ${n}! Your ${s} appointment has been confirmed for ${d} at ${t}. ` +
+      (p.manageUrl
+        ? `To cancel or reschedule, visit: ${p.manageUrl} (use the last 4 digits of your phone number). See you soon!`
+        : `If you need to cancel or reschedule, please contact us. See you soon!`);
+  }
+  const d = b(formatDateBR(p.date));
+  if (p.kind === "remind")
+    return `Olá, ${n}! Passando para lembrar do seu horário de ${s} amanhã, dia ${d}, às ${t}. ` +
+      (p.manageUrl ? `Se precisar cancelar ou reagendar: ${p.manageUrl}. ` : "") + `Até breve!`;
+  if (p.kind === "cancel")
+    return `Olá, ${n}! Informamos que o seu agendamento para ${s} marcado para o dia ${d} às ${t} foi cancelado. ` +
+      `Caso deseje reagendar para outra data ou tenha qualquer dúvida, estamos à disposição.`;
+  return `Olá, ${n}! Seu agendamento para ${s} foi confirmado para o dia ${d} às ${t}. ` +
+    (p.manageUrl
+      ? `Para cancelar ou reagendar, acesse: ${p.manageUrl} (use os 4 últimos dígitos do seu telemóvel). Aguardamos você!`
+      : `Caso precise desmarcar ou reagendar, entre em contato conosco. Aguardamos você!`);
+}
+
+function withCountry(phone: string) {
+  const digits = phone.replace(/\D/g, "");
+  return digits.length <= 9 ? `351${digits}` : digits;
+}
+
+/** Monta o link do WhatsApp com a mensagem (PT ou EN). */
+export function buildWhatsAppLink(params: MsgParams): string {
+  return `https://wa.me/${withCountry(params.phone)}?text=${encodeURIComponent(buildMessage(params, true))}`;
+}
+
+/** Monta um link sms: com texto puro (PT ou EN). */
+export function buildSmsLink(params: MsgParams): string {
+  return `sms:+${withCountry(params.phone)}?body=${encodeURIComponent(buildMessage(params, false))}`;
 }
 
 export const COUNTRY_CODES = [
