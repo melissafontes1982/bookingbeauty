@@ -252,7 +252,11 @@ export function AgendaPanel() {
                 {item.notes ? (
                   <p className="mt-1 text-xs text-foreground/50">{item.notes}</p>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <LangToggle
+                    value={langs[item.id] ?? detectLang(item.client_phone)}
+                    onChange={(l) => setLangs({ ...langs, [item.id]: l })}
+                  />
                   <a
                     href={buildWhatsAppLink({
                       phone: item.client_phone,

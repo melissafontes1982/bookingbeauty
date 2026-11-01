@@ -457,8 +457,14 @@ function Confirmation({
   businessPhone: string;
   onReset: () => void;
 }) {
-  const message =
-    `Olá! Acabei de agendar um horário pelo site:\n` +
+  const en = detectLang(booking.phone ?? "") === "en";
+  const message = en
+    ? `Hello! I just booked an appointment on the website:\n` +
+      `• *Service:* ${booking.serviceName}\n` +
+      `• *Date:* ${booking.date.split("-").reverse().join("/")} at ${booking.time}\n` +
+      `• *My name:* ${booking.name}\n` +
+      `Could you please confirm?`
+    : `Olá! Acabei de agendar um horário pelo site:\n` +
     `• *Serviço:* ${booking.serviceName}\n` +
     `• *Data:* ${formatLongDateBR(booking.date)} às ${booking.time}\n` +
     `• *Meu nome:* ${booking.name}\n` +
