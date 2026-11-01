@@ -1,3 +1,4 @@
+import { setMessageConfig, type MessageTemplates } from "@/lib/schedule";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
