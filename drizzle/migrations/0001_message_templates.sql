@@ -1,0 +1,1 @@
+ALTER TABLE public.general_settings ADD COLUMN IF NOT EXISTS message_templates jsonb NOT NULL DEFAULT '{}'::jsonb, ADD COLUMN IF NOT EXISTS contact_instructions text NOT NULL DEFAULT '';

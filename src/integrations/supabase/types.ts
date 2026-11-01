@@ -117,8 +117,10 @@ export type Database = {
         Row: {
           business_segment: string
           company_name: string
+          contact_instructions: string
           id: number
           logo_url: string | null
+          message_templates: Json
           theme_background: string | null
           theme_button: string | null
           theme_button_text: string | null
@@ -130,8 +132,10 @@ export type Database = {
         Insert: {
           business_segment?: string
           company_name?: string
+          contact_instructions?: string
           id?: number
           logo_url?: string | null
+          message_templates?: Json
           theme_background?: string | null
           theme_button?: string | null
           theme_button_text?: string | null
@@ -143,8 +147,10 @@ export type Database = {
         Update: {
           business_segment?: string
           company_name?: string
+          contact_instructions?: string
           id?: number
           logo_url?: string | null
+          message_templates?: Json
           theme_background?: string | null
           theme_button?: string | null
           theme_button_text?: string | null
