@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AparenciaSection } from "./AparenciaSection";
 import { BackupSection } from "./BackupSection";
 import { LogoSection } from "./LogoSection";
+import { MensagensSection } from "./MensagensSection";
 
 export function ConfiguracoesPanel() {
   const queryClient = useQueryClient();
@@ -101,6 +102,7 @@ export function ConfiguracoesPanel() {
         {save.isSuccess ? <p className="text-xs text-brand-deep">Configurações salvas.</p> : null}
         {save.isError ? <p className="text-xs text-destructive">Não foi possível salvar.</p> : null}
       </form>
+      <MensagensSection />
       <LogoSection />
       <AparenciaSection />
       <BackupSection />

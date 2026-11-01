@@ -151,7 +151,55 @@ type MsgParams = {
   lang?: MsgLang;
 };
 
+export type MsgKind = "confirm" | "cancel" | "remind";
+export type MessageTemplates = Partial<Record<MsgLang, Partial<Record<MsgKind, string>>>>;
+export const TEMPLATE_VARS = ["{cliente}", "{servico}", "{data}", "{horario}", "{estabelecimento}", "{contato}", "{link}"] as const;
+
+export const DEFAULT_TEMPLATES: Record<MsgLang, Record<MsgKind, string>> = {
+  pt: {
+    confirm: "Olá, {cliente}! Seu agendamento para {servico} em {estabelecimento} foi confirmado para o dia {data} às {horario}. Para cancelar ou reagendar, acesse: {link} (use os 4 últimos dígitos do seu telemóvel). {contato} Aguardamos você!",
+    cancel: "Olá, {cliente}! Informamos que o seu agendamento para {servico} em {estabelecimento}, marcado para o dia {data} às {horario}, foi cancelado. {contato} Estamos à disposição para reagendar.",
+    remind: "Olá, {cliente}! Passando para lembrar do seu horário de {servico} em {estabelecimento} amanhã, dia {data}, às {horario}. Se precisar cancelar ou reagendar: {link}. {contato} Até breve!",
+  },
+  en: {
+    confirm: "Hello, {cliente}! Your {servico} appointment at {estabelecimento} has been confirmed for {data} at {horario}. To cancel or reschedule, visit: {link} (use the last 4 digits of your phone number). {contato} See you soon!",
+    cancel: "Hello, {cliente}! We would like to inform you that your {servico} appointment at {estabelecimento}, scheduled for {data} at {horario}, has been cancelled. {contato} We are happy to help you reschedule.",
+    remind: "Hello, {cliente}! Friendly reminder of your {servico} appointment at {estabelecimento} tomorrow, {data}, at {horario}. To cancel or reschedule: {link}. {contato} See you soon!",
+  },
+};
+
+type MessageConfig = { templates: MessageTemplates; businessName: string; contact: string };
+let messageConfig: MessageConfig | null = null;
+/** Define os modelos personalizados usados por buildWhatsAppLink/buildSmsLink. */
+export function setMessageConfig(cfg: MessageConfig | null) {
+  messageConfig = cfg;
+}
+
+export function fillTemplate(tpl: string, v: Record<string, string>): string {
+  return tpl
+    .replace(/\{(cliente|servico|data|horario|estabelecimento|contato|link)\}/g, (_, k: string) => v[k] ?? "")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/ +([.,!?])/g, "$1")
+    .trim();
+}
+
 function buildMessage(p: MsgParams, bold: boolean): string {
+  if (messageConfig) {
+    const lang = p.lang ?? detectLang(p.phone);
+    const kind = p.kind ?? "confirm";
+    const custom = messageConfig.templates[lang]?.[kind]?.trim();
+    const tpl = custom || DEFAULT_TEMPLATES[lang][kind];
+    const b = (t: string) => (bold && t ? `*${t}*` : t);
+    return fillTemplate(tpl, {
+      cliente: b(p.clientName), servico: b(p.serviceName),
+      data: b(lang === "en" ? formatDateEN(p.date) : formatDateBR(p.date)), horario: b(p.time),
+      estabelecimento: messageConfig.businessName, contato: messageConfig.contact, link: p.manageUrl ?? "",
+    });
+  }
+  return buildLegacyMessage(p, bold);
+}
+
+function buildLegacyMessage(p: MsgParams, bold: boolean): string {
   const b = (t: string) => (bold ? `*${t}*` : t);
   const lang = p.lang ?? detectLang(p.phone);
   const n = b(p.clientName), s = b(p.serviceName), t = b(p.time);

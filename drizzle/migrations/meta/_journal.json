@@ -8,6 +8,13 @@
       "when": 1791807489710,
       "tag": "0000_add_client_nif",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793576128819,
+      "tag": "0001_message_templates",
+      "breakpoints": true
     }
   ]
 }
