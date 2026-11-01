@@ -54,6 +54,26 @@ function PainelPage() {
     },
   });
 
+  const { data: msgCfg } = useQuery({
+    queryKey: ["message-config"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("general_settings")
+        .select("company_name, message_templates, contact_instructions")
+        .eq("id", 1)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  if (msgCfg) {
+    setMessageConfig({
+      templates: (msgCfg.message_templates ?? {}) as MessageTemplates,
+      businessName: msgCfg.company_name ?? "",
+      contact: msgCfg.contact_instructions ?? "",
+    });
+  }
+
   const companyName = settings?.company_name ?? "Studio Eleve";
   const segment = settings?.business_segment?.trim() || "Estética e bem-estar";
 
