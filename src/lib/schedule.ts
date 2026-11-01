@@ -134,7 +134,7 @@ export function detectLang(phone: string): MsgLang {
 }
 
 function formatDateEN(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
+  const [y = 0, m = 1, d = 1] = iso.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-GB", {
     day: "numeric", month: "long", year: "numeric", timeZone: "UTC",
   });
