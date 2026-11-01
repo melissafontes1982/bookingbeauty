@@ -16,6 +16,7 @@ import {
   WEEKDAY_SHORT,
   weekdayOfDate,
   COUNTRY_CODES,
+  detectLang,
 } from "@/lib/schedule";
 
 export const Route = createFileRoute("/")({
@@ -234,7 +235,7 @@ function BookingPage() {
             </div>
 
             {booking ? (
-              <Confirmation booking={booking} businessPhone={settings?.whatsapp_number ?? ""} onReset={() => {
+              <Confirmation booking={booking} countryCode={countryCode} businessPhone={settings?.whatsapp_number ?? ""} onReset={() => {
                 setBooking(null);
                 setServiceId(null);
                 setTime(null);
@@ -451,14 +452,22 @@ function BookingPage() {
 function Confirmation({
   booking,
   businessPhone,
+  countryCode,
   onReset,
 }: {
   booking: Booking;
+  countryCode: string;
   businessPhone: string;
   onReset: () => void;
 }) {
-  const message =
-    `Olá! Acabei de agendar um horário pelo site:\n` +
+  const en = detectLang(`${countryCode}000000000`) === "en";
+  const message = en
+    ? `Hello! I just booked an appointment on the website:\n` +
+      `• *Service:* ${booking.serviceName}\n` +
+      `• *Date:* ${booking.date.split("-").reverse().join("/")} at ${booking.time}\n` +
+      `• *My name:* ${booking.name}\n` +
+      `Could you please confirm?`
+    : `Olá! Acabei de agendar um horário pelo site:\n` +
     `• *Serviço:* ${booking.serviceName}\n` +
     `• *Data:* ${formatLongDateBR(booking.date)} às ${booking.time}\n` +
     `• *Meu nome:* ${booking.name}\n` +

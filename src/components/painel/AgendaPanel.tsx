@@ -2,8 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { LembretesSection } from "./LembretesSection";
+import { LangToggle } from "./LangToggle";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  detectLang,
+  type MsgLang,
   addDaysISO,
   buildWhatsAppLink,
   buildSmsLink,
@@ -28,6 +31,7 @@ export function AgendaPanel() {
   const queryClient = useQueryClient();
   const [view, setView] = useState<View>("dia");
   const [anchor, setAnchor] = useState(todayISO());
+  const [langs, setLangs] = useState<Record<string, MsgLang>>({});
 
   const range = useMemo(() => {
     if (view === "dia") return { from: anchor, to: anchor };
@@ -248,7 +252,11 @@ export function AgendaPanel() {
                 {item.notes ? (
                   <p className="mt-1 text-xs text-foreground/50">{item.notes}</p>
                 ) : null}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <LangToggle
+                    value={langs[item.id] ?? detectLang(item.client_phone)}
+                    onChange={(l) => setLangs({ ...langs, [item.id]: l })}
+                  />
                   <a
                     href={buildWhatsAppLink({
                       phone: item.client_phone,
@@ -257,6 +265,7 @@ export function AgendaPanel() {
                       date: item.appointment_date,
                       time: item.start_time.slice(0, 5),
                       kind: item.status === "cancelado" ? "cancel" : "confirm",
+                      lang: langs[item.id] ?? detectLang(item.client_phone),
                       ...(item.status === "cancelado"
                         ? {}
                         : { manageUrl: `${window.location.origin}/agendamento/${item.manage_token}` }),
@@ -277,6 +286,7 @@ export function AgendaPanel() {
                       date: item.appointment_date,
                       time: item.start_time.slice(0, 5),
                       kind: item.status === "cancelado" ? "cancel" : "confirm",
+                      lang: langs[item.id] ?? detectLang(item.client_phone),
                       ...(item.status === "cancelado"
                         ? {}
                         : { manageUrl: `${window.location.origin}/agendamento/${item.manage_token}` }),
@@ -297,6 +307,7 @@ export function AgendaPanel() {
                           date: item.appointment_date,
                           time: item.start_time.slice(0, 5),
                           kind: "cancel",
+                          lang: langs[item.id] ?? detectLang(item.client_phone),
                         });
                         // Open synchronously (user gesture) so popup blockers allow it.
                         window.open(link, "_blank", "noopener");
