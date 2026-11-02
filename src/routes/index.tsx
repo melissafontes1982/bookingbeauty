@@ -92,8 +92,8 @@ function BookingPage() {
   );
   const canGoBack = weekStart > todayISO();
   const monthLabel = useMemo(() => {
-    const [y, m] = days[3].split("-").map(Number);
-    const label = new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("pt-PT", {
+    const [y = 2026, m = 1] = (days[3] ?? weekStart).split("-").map(Number);
+    const label = new Date(y, m - 1, 1).toLocaleDateString("pt-PT", {
       month: "long",
       year: "numeric",
     });
