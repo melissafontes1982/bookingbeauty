@@ -98,7 +98,7 @@ function BookingPage() {
       year: "numeric",
     });
     return label.charAt(0).toUpperCase() + label.slice(1);
-  }, [days]);
+  }, [days, weekStart]);
 
   const openWeekdays = useMemo(
     () => new Set(siteInfo?.openWeekdays ?? []),
