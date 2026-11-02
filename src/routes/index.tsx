@@ -329,38 +329,65 @@ function BookingPage() {
                       />
                     </label>
                   </div>
-                  <div className="scrollbar-none -mx-5 mt-3 flex snap-x gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
+                  <div className="scrollbar-none -mx-5 mt-3 flex snap-x snap-mandatory gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
                     {days.map((day) => {
                       const selected = day === date;
+                      const today = todayISO();
+                      const past = day < today;
+                      const isToday = day === today;
                       const closed = !openWeekdays.has(weekdayOfDate(day));
+                      const unavailable = past || closed;
+                      const status = past ? "Passado" : closed ? "Fechado" : isToday ? "Hoje" : "Livre";
                       return (
                         <button
                           key={day}
                           type="button"
-                          disabled={closed}
+                          disabled={unavailable}
+                          aria-pressed={selected}
+                          aria-label={`${WEEKDAY_SHORT[weekdayOfDate(day)]} ${day.slice(8)} — ${status}`}
                           onClick={() => {
                             setDate(day);
                             setTime(null);
                           }}
-                          className={`w-16 shrink-0 rounded-2xl p-3 text-center transition-shadow sm:w-auto sm:shrink ${
+                          className={`flex min-h-[84px] w-[68px] shrink-0 snap-start flex-col items-center justify-center gap-0.5 rounded-2xl border px-1 py-2.5 text-center transition-all sm:w-auto sm:shrink ${
                             selected
-                              ? "bg-primary text-primary-foreground shadow-lg"
-                              : closed
-                                ? "glass-soft opacity-40"
-                                : "glass-soft hover:shadow-md"
+                              ? "border-primary bg-primary text-primary-foreground shadow-lg ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
+                              : unavailable
+                                ? "cursor-not-allowed border-dashed border-foreground/15 bg-muted/40 text-foreground/35"
+                                : "glass-soft border-primary/25 text-foreground hover:border-primary/60 hover:shadow-md active:scale-[0.97]"
                           }`}
                         >
-                          <p
-                            className={`text-[11px] uppercase tracking-wide ${
-                              selected ? "text-primary-foreground/70" : "text-foreground/50"
+                          <span
+                            className={`text-xs font-medium uppercase tracking-wide ${
+                              selected ? "text-primary-foreground/80" : unavailable ? "" : "text-foreground/60"
                             }`}
                           >
                             {WEEKDAY_SHORT[weekdayOfDate(day)]}
-                          </p>
-                          <p className="font-display text-lg font-semibold">{day.slice(8)}</p>
+                          </span>
+                          <span className={`font-display text-xl font-semibold leading-none ${unavailable ? "line-through decoration-1" : ""}`}>
+                            {day.slice(8)}
+                          </span>
+                          <span
+                            className={`mt-0.5 text-[10px] font-semibold uppercase tracking-wide ${
+                              selected
+                                ? "text-primary-foreground/90"
+                                : unavailable
+                                  ? ""
+                                  : isToday
+                                    ? "text-primary"
+                                    : "text-primary/70"
+                            }`}
+                          >
+                            {status}
+                          </span>
                         </button>
                       );
                     })}
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground/60">
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full border border-primary/40 bg-background" />Livre</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-primary" />Selecionado</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full border border-dashed border-foreground/30 bg-muted" />Fechado / passado</span>
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
