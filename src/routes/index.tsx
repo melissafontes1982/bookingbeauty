@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { themeToCssVars } from "@/lib/theme";
 import { createPublicBooking, getAvailableSlots } from "@/lib/booking.functions";
+import { getPublicSiteInfo } from "@/lib/public-site.functions";
 import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import {
   addDaysISO,
@@ -45,6 +46,7 @@ type Booking = Awaited<ReturnType<typeof createPublicBooking>>;
 function BookingPage() {
   const slotsFn = useServerFn(getAvailableSlots);
   const bookFn = useServerFn(createPublicBooking);
+  const siteInfoFn = useServerFn(getPublicSiteInfo);
 
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [date, setDate] = useState<string>(todayISO());
@@ -73,27 +75,11 @@ function BookingPage() {
     },
   });
 
-  const { data: schedule } = useQuery({
-    queryKey: ["public-schedule"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("schedule_settings").select("*");
-      if (error) throw error;
-      return data;
-    },
+  const { data: siteInfo } = useQuery({
+    queryKey: ["public-site-info"],
+    queryFn: () => siteInfoFn(),
   });
-
-  const { data: settings } = useQuery({
-    queryKey: ["general-settings"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("general_settings")
-        .select("company_name, business_segment, whatsapp_number, logo_url, theme_primary, theme_button, theme_button_text, theme_text, theme_background")
-        .eq("id", 1)
-        .single();
-      if (error) throw error;
-      return data;
-    },
-  });
+  const settings = siteInfo?.settings ?? null;
 
   const companyName = settings?.company_name ?? "Studio Eleve";
   const segment = settings?.business_segment?.trim() || "Estética e bem-estar";
@@ -105,8 +91,8 @@ function BookingPage() {
   }, []);
 
   const openWeekdays = useMemo(
-    () => new Set((schedule ?? []).filter((s) => s.is_open).map((s) => s.weekday)),
-    [schedule],
+    () => new Set(siteInfo?.openWeekdays ?? []),
+    [siteInfo],
   );
 
   const { data: slotData, isFetching: loadingSlots } = useQuery({

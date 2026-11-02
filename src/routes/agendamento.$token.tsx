@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
-import { supabase } from "@/integrations/supabase/client";
+import { getPublicSiteInfo } from "@/lib/public-site.functions";
 import { themeToCssVars } from "@/lib/theme";
 import {
   cancelManagedBooking,
@@ -53,13 +53,12 @@ function ManagePage() {
   const [date, setDate] = useState(todayISO());
   const [time, setTime] = useState<string | null>(null);
 
-  const { data: settings } = useQuery({
-    queryKey: ["general-settings"],
-    queryFn: async () => {
-      const { data } = await supabase.from("general_settings").select("*").eq("id", 1).maybeSingle();
-      return data;
-    },
+  const siteInfoFn = useServerFn(getPublicSiteInfo);
+  const { data: siteInfo } = useQuery({
+    queryKey: ["public-site-info"],
+    queryFn: () => siteInfoFn(),
   });
+  const settings = siteInfo?.settings ?? null;
 
   const slots = useQuery({
     queryKey: ["reschedule-slots", token, date],
