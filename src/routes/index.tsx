@@ -85,10 +85,20 @@ function BookingPage() {
   const segment = settings?.business_segment?.trim() || "Estética e bem-estar";
   const contactLink = buildContactWhatsAppLink(settings?.whatsapp_number ?? "");
 
-  const days = useMemo(() => {
-    const base = todayISO();
-    return Array.from({ length: 14 }, (_, i) => addDaysISO(base, i));
-  }, []);
+  const [weekStart, setWeekStart] = useState(() => todayISO());
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i)),
+    [weekStart],
+  );
+  const canGoBack = weekStart > todayISO();
+  const monthLabel = useMemo(() => {
+    const [y = 2026, m = 1] = (days[3] ?? weekStart).split("-").map(Number);
+    const label = new Date(y, m - 1, 1).toLocaleDateString("pt-PT", {
+      month: "long",
+      year: "numeric",
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }, [days, weekStart]);
 
   const openWeekdays = useMemo(
     () => new Set(siteInfo?.openWeekdays ?? []),
@@ -278,6 +288,47 @@ function BookingPage() {
 
                 <section className="mt-6">
                   <p className="text-sm font-semibold text-foreground/80">Escolha o dia e horário</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label="Semana anterior"
+                        disabled={!canGoBack}
+                        onClick={() => {
+                          const prev = addDaysISO(weekStart, -7);
+                          setWeekStart(prev < todayISO() ? todayISO() : prev);
+                        }}
+                        className="glass-soft grid size-9 place-items-center rounded-full text-lg disabled:opacity-30"
+                      >
+                        ‹
+                      </button>
+                      <span className="min-w-36 text-center font-display text-base font-semibold">{monthLabel}</span>
+                      <button
+                        type="button"
+                        aria-label="Próxima semana"
+                        onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
+                        className="glass-soft grid size-9 place-items-center rounded-full text-lg"
+                      >
+                        ›
+                      </button>
+                    </div>
+                    <label className="glass-soft flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-foreground/70">
+                      Ir para data
+                      <input
+                        type="date"
+                        min={todayISO()}
+                        value={date}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (!v || v < todayISO()) return;
+                          setWeekStart(v);
+                          setDate(v);
+                          setTime(null);
+                        }}
+                        className="bg-transparent text-sm text-foreground outline-none"
+                      />
+                    </label>
+                  </div>
                   <div className="scrollbar-none -mx-5 mt-3 flex snap-x gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
                     {days.map((day) => {
                       const selected = day === date;
