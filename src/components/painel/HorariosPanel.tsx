@@ -104,8 +104,8 @@ export function HorariosPanel() {
         <div className="mt-4 space-y-3">
           {(settings ?? []).map((setting) => (
             <div key={setting.weekday} className="glass-soft rounded-2xl p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex w-32 items-center gap-2 text-sm font-semibold">
+              <div className="grid grid-cols-2 items-center gap-3 sm:flex sm:flex-wrap">
+                <label className="col-span-2 flex items-center gap-2 text-sm font-semibold sm:w-32">
                   <input
                     type="checkbox"
                     checked={setting.is_open}

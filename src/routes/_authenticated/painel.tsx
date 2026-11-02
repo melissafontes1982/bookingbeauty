@@ -80,9 +80,9 @@ function PainelPage() {
 
   return (
     <div className="min-h-screen">
-      <div className="mx-auto max-w-6xl px-6 py-8">
+      <div className="mx-auto max-w-6xl px-3 py-5 sm:px-6 sm:py-8">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             {settings?.logo_url ? (
               <img src={settings.logo_url} alt={companyName} className="h-12 w-auto max-w-[140px] rounded-2xl object-contain" />
             ) : (
@@ -121,13 +121,13 @@ function PainelPage() {
           </div>
         </header>
 
-        <nav className="glass-soft mt-8 flex flex-wrap gap-1 rounded-2xl p-1">
+        <nav className="glass-soft scrollbar-none mt-6 flex gap-1 overflow-x-auto rounded-2xl p-1 sm:mt-8 sm:flex-wrap">
           {TABS.map((item) => (
             <button
               key={item.id}
               type="button"
               onClick={() => setTab(item.id)}
-              className={`flex-1 rounded-xl px-4 py-2.5 text-xs font-semibold ${
+              className={`shrink-0 whitespace-nowrap rounded-xl px-4 py-3 text-xs font-semibold sm:flex-1 sm:py-2.5 ${
                 tab === item.id ? "bg-primary text-primary-foreground" : "text-foreground/70"
               }`}
             >
@@ -136,7 +136,7 @@ function PainelPage() {
           ))}
         </nav>
 
-        <div className="glass mt-6 rounded-3xl p-7">
+        <div className="glass mt-4 rounded-3xl p-4 sm:mt-6 sm:p-7">
           {tab === "agenda" ? <AgendaPanel /> : null}
           {tab === "servicos" ? <ServicosPanel /> : null}
           {tab === "clientes" ? <ClientesPanel /> : null}
