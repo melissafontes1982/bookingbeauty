@@ -104,8 +104,8 @@ export function HorariosPanel() {
         <div className="mt-4 space-y-3">
           {(settings ?? []).map((setting) => (
             <div key={setting.weekday} className="glass-soft rounded-2xl p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex w-32 items-center gap-2 text-sm font-semibold">
+              <div className="grid grid-cols-2 items-center gap-3 sm:flex sm:flex-wrap">
+                <label className="col-span-2 flex items-center gap-2 text-sm font-semibold sm:w-32">
                   <input
                     type="checkbox"
                     checked={setting.is_open}
@@ -273,7 +273,7 @@ function TimeField({
         type="time"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 block rounded-xl border border-border bg-input px-3 py-2 text-sm text-foreground outline-none"
+        className="mt-1 block w-full rounded-xl border border-border bg-input px-3 py-2 text-base text-foreground sm:w-auto sm:text-sm outline-none"
       />
     </label>
   );

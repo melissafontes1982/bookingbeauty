@@ -156,7 +156,7 @@ function BookingPage() {
                 href={contactLink}
                 target="_blank"
                 rel="noreferrer"
-                className="glass-soft rounded-full px-4 py-2 text-sm font-semibold text-brand-deep transition-shadow hover:shadow-md"
+                className="glass-soft whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold text-brand-deep transition-shadow hover:shadow-md"
               >
                 Chame no WhatsApp
               </a>
@@ -278,7 +278,7 @@ function BookingPage() {
 
                 <section className="mt-6">
                   <p className="text-sm font-semibold text-foreground/80">Escolha o dia e horário</p>
-                  <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
+                  <div className="scrollbar-none -mx-5 mt-3 flex snap-x gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:grid sm:grid-cols-7 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0">
                     {days.map((day) => {
                       const selected = day === date;
                       const closed = !openWeekdays.has(weekdayOfDate(day));
