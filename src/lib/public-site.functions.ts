@@ -13,6 +13,7 @@ export type PublicSiteInfo = {
     theme_background: string | null;
   } | null;
   openWeekdays: number[];
+  hours: { weekday: number; is_open: boolean; open_time: string; close_time: string }[];
 };
 
 /**
@@ -31,12 +32,13 @@ export const getPublicSiteInfo = createServerFn({ method: "GET" }).handler(
         )
         .eq("id", 1)
         .maybeSingle(),
-      supabaseAdmin.from("schedule_settings").select("weekday, is_open"),
+      supabaseAdmin.from("schedule_settings").select("weekday, is_open, open_time, close_time"),
     ]);
 
     return {
       settings: settings ?? null,
       openWeekdays: (schedule ?? []).filter((s) => s.is_open).map((s) => s.weekday),
+      hours: schedule ?? [],
     };
   },
 );

@@ -191,7 +191,7 @@ function BookingPage() {
             <div className="glass-soft mt-5 rounded-2xl p-4">
               <p className="eyebrow">Horário de funcionamento</p>
               <ul className="mt-2 space-y-1 text-xs text-foreground/70">
-                {(schedule ?? [])
+                {(siteInfo?.hours ?? [])
                   .slice()
                   .sort((a, b) => a.weekday - b.weekday)
                   .map((s) => (
