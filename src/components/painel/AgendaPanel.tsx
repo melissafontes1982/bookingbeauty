@@ -113,25 +113,25 @@ export function AgendaPanel() {
                 : `${range.from.slice(8)}/${range.from.slice(5, 7)} – ${range.to.slice(8)}/${range.to.slice(5, 7)}`}
           </h2>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => setAnchor(view === "mes" ? shiftMonth(anchor, -1) : addDaysISO(anchor, view === "dia" ? -1 : -7))}
-            className="glass-soft rounded-xl px-3 py-2 text-xs font-semibold"
+            className="glass-soft rounded-xl px-3 py-2.5 text-xs font-semibold"
           >
             ←
           </button>
           <button
             type="button"
             onClick={() => setAnchor(todayISO())}
-            className="glass-soft rounded-xl px-3 py-2 text-xs font-semibold"
+            className="glass-soft rounded-xl px-3 py-2.5 text-xs font-semibold"
           >
             Hoje
           </button>
           <button
             type="button"
             onClick={() => setAnchor(view === "mes" ? shiftMonth(anchor, 1) : addDaysISO(anchor, view === "dia" ? 1 : 7))}
-            className="glass-soft rounded-xl px-3 py-2 text-xs font-semibold"
+            className="glass-soft rounded-xl px-3 py-2.5 text-xs font-semibold"
           >
             →
           </button>
@@ -272,7 +272,7 @@ export function AgendaPanel() {
                     })}
                     target="_blank"
                     rel="noreferrer"
-                    className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground"
+                    className="flex-1 basis-full rounded-xl bg-primary px-4 py-3 text-center text-xs font-semibold text-primary-foreground sm:flex-none sm:basis-auto sm:py-2"
                   >
                     {item.status === "cancelado"
                       ? "Avisar Cancelamento no WhatsApp"
@@ -291,7 +291,7 @@ export function AgendaPanel() {
                         ? {}
                         : { manageUrl: `${window.location.origin}/agendamento/${item.manage_token}` }),
                     })}
-                    className="glass-soft rounded-xl px-4 py-2 text-xs font-semibold"
+                    className="glass-soft flex-1 rounded-xl px-4 py-3 text-center text-xs font-semibold sm:flex-none sm:py-2"
                   >
                     {item.status === "cancelado" ? "Avisar Cancelamento por SMS" : "Enviar SMS"}
                   </a>
@@ -313,7 +313,7 @@ export function AgendaPanel() {
                         window.open(link, "_blank", "noopener");
                         cancel.mutate(item.id);
                       }}
-                      className="glass-soft rounded-xl px-4 py-2 text-xs font-semibold text-foreground/70"
+                      className="glass-soft flex-1 rounded-xl px-4 py-3 text-xs font-semibold text-foreground/70 sm:flex-none sm:py-2"
                     >
                       Cancelar
                     </button>
@@ -324,7 +324,7 @@ export function AgendaPanel() {
                       if (!window.confirm("Tem certeza que deseja apagar este agendamento do calendário?")) return;
                       remove.mutate(item.id);
                     }}
-                    className="rounded-xl bg-destructive/10 px-4 py-2 text-xs font-semibold text-destructive"
+                    className="flex-1 rounded-xl bg-destructive/10 px-4 py-3 text-xs sm:flex-none sm:py-2 font-semibold text-destructive"
                   >
                     Excluir marcação
                   </button>
