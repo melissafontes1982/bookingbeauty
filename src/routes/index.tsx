@@ -85,10 +85,20 @@ function BookingPage() {
   const segment = settings?.business_segment?.trim() || "Estética e bem-estar";
   const contactLink = buildContactWhatsAppLink(settings?.whatsapp_number ?? "");
 
-  const days = useMemo(() => {
-    const base = todayISO();
-    return Array.from({ length: 14 }, (_, i) => addDaysISO(base, i));
-  }, []);
+  const [weekStart, setWeekStart] = useState(() => todayISO());
+  const days = useMemo(
+    () => Array.from({ length: 7 }, (_, i) => addDaysISO(weekStart, i)),
+    [weekStart],
+  );
+  const canGoBack = weekStart > todayISO();
+  const monthLabel = useMemo(() => {
+    const [y, m] = days[3].split("-").map(Number);
+    const label = new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("pt-PT", {
+      month: "long",
+      year: "numeric",
+    });
+    return label.charAt(0).toUpperCase() + label.slice(1);
+  }, [days]);
 
   const openWeekdays = useMemo(
     () => new Set(siteInfo?.openWeekdays ?? []),
