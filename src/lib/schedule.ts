@@ -168,7 +168,7 @@ export const DEFAULT_TEMPLATES: Record<MsgLang, Record<MsgKind, string>> = {
   },
 };
 
-type MessageConfig = { templates: MessageTemplates; businessName: string; contact: string };
+type MessageConfig = { templates: MessageTemplates; businessName: string; contact: string; contactEn?: string };
 let messageConfig: MessageConfig | null = null;
 /** Define os modelos personalizados usados por buildWhatsAppLink/buildSmsLink. */
 export function setMessageConfig(cfg: MessageConfig | null) {
@@ -193,7 +193,9 @@ function buildMessage(p: MsgParams, bold: boolean): string {
     return fillTemplate(tpl, {
       cliente: b(p.clientName), servico: b(p.serviceName),
       data: b(lang === "en" ? formatDateEN(p.date) : formatDateBR(p.date)), horario: b(p.time),
-      estabelecimento: messageConfig.businessName, contato: messageConfig.contact, link: p.manageUrl ?? "",
+      estabelecimento: messageConfig.businessName,
+      contato: lang === "en" ? (messageConfig.contactEn ?? "") : messageConfig.contact,
+      link: p.manageUrl ?? "",
     });
   }
   return buildLegacyMessage(p, bold);

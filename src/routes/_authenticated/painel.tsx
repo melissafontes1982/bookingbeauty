@@ -72,6 +72,7 @@ function PainelPage() {
       templates: (msgCfg.message_templates ?? {}) as MessageTemplates,
       businessName: msgCfg.company_name ?? "",
       contact: msgCfg.contact_instructions ?? "",
+      contactEn: String((msgCfg.message_templates as { contact_en?: string } | null)?.contact_en ?? ""),
     });
   }
 

@@ -47,7 +47,10 @@ export function MensagensSection() {
   const [lang, setLang] = useState<MsgLang>("pt");
   const [tpls, setTpls] = useState<Full>(DEFAULT_TEMPLATES);
   const [business, setBusiness] = useState("");
-  const [contact, setContact] = useState("");
+  const [contactPt, setContactPt] = useState("");
+  const [contactEn, setContactEn] = useState("");
+  const contact = lang === "en" ? contactEn : contactPt;
+  const setContact = lang === "en" ? setContactEn : setContactPt;
   const refs = useRef<Partial<Record<MsgKind, HTMLTextAreaElement | null>>>({});
 
   const { data } = useQuery({
@@ -67,7 +70,8 @@ export function MensagensSection() {
     if (!data) return;
     setTpls(merge(data.message_templates as MessageTemplates));
     setBusiness(data.company_name ?? "");
-    setContact(data.contact_instructions ?? "");
+    setContactPt(data.contact_instructions ?? "");
+    setContactEn(String((data.message_templates as { contact_en?: string } | null)?.contact_en ?? ""));
   }, [data]);
 
   const save = useMutation({
@@ -76,8 +80,8 @@ export function MensagensSection() {
         .from("general_settings")
         .update({
           company_name: business.trim() || "Studio Eleve",
-          message_templates: tpls,
-          contact_instructions: contact.trim(),
+          message_templates: { ...tpls, contact_en: contactEn.trim() },
+          contact_instructions: contactPt.trim(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", 1);
