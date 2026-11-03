@@ -47,7 +47,10 @@ export function MensagensSection() {
   const [lang, setLang] = useState<MsgLang>("pt");
   const [tpls, setTpls] = useState<Full>(DEFAULT_TEMPLATES);
   const [business, setBusiness] = useState("");
-  const [contact, setContact] = useState("");
+  const [contactPt, setContactPt] = useState("");
+  const [contactEn, setContactEn] = useState("");
+  const contact = lang === "en" ? contactEn : contactPt;
+  const setContact = lang === "en" ? setContactEn : setContactPt;
   const refs = useRef<Partial<Record<MsgKind, HTMLTextAreaElement | null>>>({});
 
   const { data } = useQuery({
