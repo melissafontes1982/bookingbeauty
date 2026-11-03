@@ -67,7 +67,8 @@ export function MensagensSection() {
     if (!data) return;
     setTpls(merge(data.message_templates as MessageTemplates));
     setBusiness(data.company_name ?? "");
-    setContact(data.contact_instructions ?? "");
+    setContactPt(data.contact_instructions ?? "");
+    setContactEn(String((data.message_templates as { contact_en?: string } | null)?.contact_en ?? ""));
   }, [data]);
 
   const save = useMutation({
@@ -76,8 +77,8 @@ export function MensagensSection() {
         .from("general_settings")
         .update({
           company_name: business.trim() || "Studio Eleve",
-          message_templates: tpls,
-          contact_instructions: contact.trim(),
+          message_templates: { ...tpls, contact_en: contactEn.trim() },
+          contact_instructions: contactPt.trim(),
           updated_at: new Date().toISOString(),
         })
         .eq("id", 1);
