@@ -8,6 +8,7 @@ import { themeToCssVars } from "@/lib/theme";
 import { createPublicBooking, getAvailableSlots } from "@/lib/booking.functions";
 import { getPublicSiteInfo } from "@/lib/public-site.functions";
 import { ServiceAdvisor } from "@/components/ServiceAdvisor";
+import { LangSwitch, longDate, useLang, weekdayShort, type Lang } from "@/lib/i18n";
 import {
   addDaysISO,
   buildContactWhatsAppLink,
@@ -44,6 +45,8 @@ export const Route = createFileRoute("/")({
 type Booking = Awaited<ReturnType<typeof createPublicBooking>>;
 
 function BookingPage() {
+  const lang = useLang();
+  const L = (pt: string, en: string) => (lang === "en" ? en : pt);
   const slotsFn = useServerFn(getAvailableSlots);
   const bookFn = useServerFn(createPublicBooking);
   const siteInfoFn = useServerFn(getPublicSiteInfo);
@@ -82,7 +85,7 @@ function BookingPage() {
   const settings = siteInfo?.settings ?? null;
 
   const companyName = settings?.company_name ?? "Studio Eleve";
-  const segment = settings?.business_segment?.trim() || "Estética e bem-estar";
+  const segment = settings?.business_segment?.trim() || L("Estética e bem-estar", "Beauty & wellness");
   const contactLink = buildContactWhatsAppLink(settings?.whatsapp_number ?? "");
 
   const [weekStart, setWeekStart] = useState(() => todayISO());
@@ -93,12 +96,12 @@ function BookingPage() {
   const canGoBack = weekStart > todayISO();
   const monthLabel = useMemo(() => {
     const [y = 2026, m = 1] = (days[3] ?? weekStart).split("-").map(Number);
-    const label = new Date(y, m - 1, 1).toLocaleDateString("pt-PT", {
+    const label = new Date(y, m - 1, 1).toLocaleDateString(lang === "en" ? "en-GB" : "pt-PT", {
       month: "long",
       year: "numeric",
     });
     return label.charAt(0).toUpperCase() + label.slice(1);
-  }, [days, weekStart]);
+  }, [days, weekStart, lang]);
 
   const openWeekdays = useMemo(
     () => new Set(siteInfo?.openWeekdays ?? []),
@@ -129,7 +132,7 @@ function BookingPage() {
       });
       setBooking(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível agendar.");
+      setError(err instanceof Error ? err.message : L("Não foi possível agendar.", "Could not complete the booking."));
     } finally {
       setSaving(false);
     }
@@ -161,6 +164,7 @@ function BookingPage() {
             </div>
           </div>
           <nav className="flex items-center gap-2">
+            <LangSwitch />
             {contactLink ? (
               <a
                 href={contactLink}
@@ -168,7 +172,7 @@ function BookingPage() {
                 rel="noreferrer"
                 className="glass-soft whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-semibold text-brand-deep transition-shadow hover:shadow-md"
               >
-                Chame no WhatsApp
+                {L("Chame no WhatsApp", "Message us on WhatsApp")}
               </a>
             ) : null}
 
@@ -177,12 +181,12 @@ function BookingPage() {
 
         <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-12">
           <aside className="glass order-2 rounded-3xl p-5 sm:p-6 lg:order-1 lg:col-span-4">
-            <p className="eyebrow">Como funciona</p>
+            <p className="eyebrow">{L("Como funciona", "How it works")}</p>
             <h2 className="mt-1 font-display text-2xl font-semibold tracking-tight">
-              Quatro passos calmos
+              {L("Quatro passos calmos", "Four easy steps")}
             </h2>
             <ol className="mt-5 grid grid-cols-2 gap-2 lg:grid-cols-1 lg:gap-0 lg:space-y-3">
-              {["Escolha o serviço", "Escolha dia e horário", "Seus dados de contato", "Confirmação"].map(
+              {(lang === "en" ? ["Choose a service", "Choose date & time", "Your contact details", "Confirmation"] : ["Escolha o serviço", "Escolha dia e horário", "Seus dados de contato", "Confirmação"]).map(
                 (label, index) => (
                   <li
                     key={label}
@@ -199,18 +203,18 @@ function BookingPage() {
               )}
             </ol>
             <div className="glass-soft mt-5 rounded-2xl p-4">
-              <p className="eyebrow">Horário de funcionamento</p>
+              <p className="eyebrow">{L("Horário de funcionamento", "Opening hours")}</p>
               <ul className="mt-2 space-y-1 text-xs text-foreground/70">
                 {(siteInfo?.hours ?? [])
                   .slice()
                   .sort((a, b) => a.weekday - b.weekday)
                   .map((s) => (
                     <li key={s.weekday} className="flex justify-between">
-                      <span>{WEEKDAY_SHORT[s.weekday]}</span>
+                      <span>{weekdayShort(lang, s.weekday)}</span>
                       <span>
                         {s.is_open
                           ? `${s.open_time.slice(0, 5)} – ${s.close_time.slice(0, 5)}`
-                          : "Fechado"}
+                          : L("Fechado", "Closed")}
                       </span>
                     </li>
                   ))}
@@ -223,15 +227,15 @@ function BookingPage() {
               <div>
                 <p className="eyebrow">{segment}</p>
                 <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight">{companyName}</h1>
-                <p className="mt-1 text-sm text-foreground/60">Reserve seu momento de cuidado e bem-estar.</p>
+                <p className="mt-1 text-sm text-foreground/60">{L("Reserve seu momento de cuidado e bem-estar.", "Book your moment of care and wellbeing.")}</p>
               </div>
               <span className="glass-soft rounded-full px-3 py-1.5 text-xs font-medium text-foreground/60">
-                Passo {step} de 4
+                {L("Passo", "Step")} {step} {L("de", "of")} 4
               </span>
             </div>
 
             {booking ? (
-              <Confirmation booking={booking} countryCode={countryCode} businessPhone={settings?.whatsapp_number ?? ""} onReset={() => {
+              <Confirmation lang={lang} booking={booking} countryCode={countryCode} businessPhone={settings?.whatsapp_number ?? ""} onReset={() => {
                 setBooking(null);
                 setServiceId(null);
                 setTime(null);
@@ -245,8 +249,9 @@ function BookingPage() {
             ) : (
               <>
                 <section className="mt-6">
-                  <p className="text-sm font-semibold text-foreground/80">Escolha o serviço</p>
+                  <p className="text-sm font-semibold text-foreground/80">{L("Escolha o serviço", "Choose a service")}</p>
                   <ServiceAdvisor
+                    lang={lang}
                     onPick={(id) => {
                       setServiceId(id);
                       setTime(null);
@@ -287,12 +292,12 @@ function BookingPage() {
                 </section>
 
                 <section className="mt-6">
-                  <p className="text-sm font-semibold text-foreground/80">Escolha o dia e horário</p>
+                  <p className="text-sm font-semibold text-foreground/80">{L("Escolha o dia e horário", "Choose date & time")}</p>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        aria-label="Semana anterior"
+                        aria-label={L("Semana anterior", "Previous week")}
                         disabled={!canGoBack}
                         onClick={() => {
                           const prev = addDaysISO(weekStart, -7);
@@ -305,7 +310,7 @@ function BookingPage() {
                       <span className="min-w-36 text-center font-display text-base font-semibold">{monthLabel}</span>
                       <button
                         type="button"
-                        aria-label="Próxima semana"
+                        aria-label={L("Próxima semana", "Next week")}
                         onClick={() => setWeekStart(addDaysISO(weekStart, 7))}
                         className="glass-soft grid size-9 place-items-center rounded-full text-lg"
                       >
@@ -313,7 +318,7 @@ function BookingPage() {
                       </button>
                     </div>
                     <label className="glass-soft flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-foreground/70">
-                      Ir para data
+                      {L("Ir para data", "Go to date")}
                       <input
                         type="date"
                         min={todayISO()}
@@ -337,14 +342,14 @@ function BookingPage() {
                       const isToday = day === today;
                       const closed = !openWeekdays.has(weekdayOfDate(day));
                       const unavailable = past || closed;
-                      const status = past ? "Passado" : closed ? "Fechado" : isToday ? "Hoje" : "Livre";
+                      const status = past ? L("Passado", "Past") : closed ? L("Fechado", "Closed") : isToday ? L("Hoje", "Today") : L("Livre", "Open");
                       return (
                         <button
                           key={day}
                           type="button"
                           disabled={unavailable}
                           aria-pressed={selected}
-                          aria-label={`${WEEKDAY_SHORT[weekdayOfDate(day)]} ${day.slice(8)} — ${status}`}
+                          aria-label={`${weekdayShort(lang, weekdayOfDate(day))} ${day.slice(8)} — ${status}`}
                           onClick={() => {
                             setDate(day);
                             setTime(null);
@@ -362,7 +367,7 @@ function BookingPage() {
                               selected ? "text-primary-foreground/80" : unavailable ? "" : "text-foreground/60"
                             }`}
                           >
-                            {WEEKDAY_SHORT[weekdayOfDate(day)]}
+                            {weekdayShort(lang, weekdayOfDate(day))}
                           </span>
                           <span className={`font-display text-xl font-semibold leading-none ${unavailable ? "line-through decoration-1" : ""}`}>
                             {day.slice(8)}
@@ -385,21 +390,21 @@ function BookingPage() {
                     })}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-foreground/60">
-                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full border border-primary/40 bg-background" />Livre</span>
-                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-primary" />Selecionado</span>
-                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full border border-dashed border-foreground/30 bg-muted" />Fechado / passado</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full border border-primary/40 bg-background" />{L("Livre", "Open")}</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full bg-primary" />{L("Selecionado", "Selected")}</span>
+                    <span className="flex items-center gap-1.5"><span className="size-2.5 rounded-full border border-dashed border-foreground/30 bg-muted" />{L("Fechado / passado", "Closed / past")}</span>
                   </div>
 
                   <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6 sm:gap-3">
                     {!serviceId ? (
                       <p className="col-span-full text-sm text-foreground/50">
-                        Selecione um serviço para ver os horários livres.
+                        {L("Selecione um serviço para ver os horários livres.", "Select a service to see available times.")}
                       </p>
                     ) : loadingSlots ? (
-                      <p className="col-span-full text-sm text-foreground/50">Buscando horários…</p>
+                      <p className="col-span-full text-sm text-foreground/50">{L("Buscando horários…", "Loading times…")}</p>
                     ) : (slotData?.slots.length ?? 0) === 0 ? (
                       <p className="col-span-full text-sm text-foreground/50">
-                        Nenhum horário livre neste dia. Tente outra data.
+                        {L("Nenhum horário livre neste dia. Tente outra data.", "No free times on this day. Try another date.")}
                       </p>
                     ) : (
                       (slotData?.slots ?? []).map((slot) => (
@@ -421,19 +426,19 @@ function BookingPage() {
                 </section>
 
                 <form onSubmit={handleSubmit} className="glass-soft mt-6 rounded-2xl p-5">
-                  <p className="text-sm font-semibold text-foreground/80">Seus dados</p>
+                  <p className="text-sm font-semibold text-foreground/80">{L("Seus dados", "Your details")}</p>
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <input
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="Primeiro e último nome"
+                      placeholder={L("Primeiro e último nome", "First and last name")}
                       autoComplete="name"
                       className="rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                     />
                     <div className="flex gap-2">
                       <select
-                        aria-label="Código do país"
+                        aria-label={L("Código do país", "Country code")}
                         value={countryCode}
                         onChange={(e) => setCountryCode(e.target.value)}
                         className="rounded-xl border border-border bg-input px-2 py-3 text-base outline-none focus:ring-2 focus:ring-ring sm:text-sm"
@@ -449,7 +454,7 @@ function BookingPage() {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="WhatsApp (ex.: 912 345 678)"
+                        placeholder={L("WhatsApp (ex.: 912 345 678)", "WhatsApp (e.g. 912 345 678)")}
                         autoComplete="tel-national"
                         inputMode="tel"
                         className="min-w-0 flex-1 rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
@@ -459,19 +464,19 @@ function BookingPage() {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="O seu e-mail"
+                      placeholder={L("O seu e-mail", "Your e-mail")}
                       autoComplete="email"
                       className="rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                     />
                     <input
                       value={nif}
                       onChange={(e) => setNif(e.target.value)}
-                      placeholder="NIF (opcional)"
+                      placeholder={L("NIF (opcional)", "Tax number / NIF (optional)")}
                       inputMode="numeric"
                       className="rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                     />
                     <label className="text-xs text-foreground/60 sm:col-span-2">
-                      Data de nascimento (opcional)
+                      {L("Data de nascimento (opcional)", "Date of birth (optional)")}
                       <input
                         type="date"
                         value={birthDate}
@@ -483,14 +488,14 @@ function BookingPage() {
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Observações (opcional)"
+                    placeholder={L("Observações (opcional)", "Notes (optional)")}
                     rows={2}
                     className="mt-3 w-full rounded-xl border border-border bg-input px-4 py-3 text-base outline-none placeholder:text-foreground/40 focus:ring-2 focus:ring-ring sm:text-sm"
                   />
 
                   {selectedService && time ? (
                     <p className="mt-3 text-xs text-foreground/60">
-                      {selectedService.name} · {formatLongDateBR(date)} às {time} ·{" "}
+                      {selectedService.name} · {longDate(lang, date)} {L("às", "at")} {time} ·{" "}
                       {formatPriceEUR(Number(selectedService.price))}
                     </p>
                   ) : null}
@@ -501,7 +506,7 @@ function BookingPage() {
                     disabled={!serviceId || !time || saving}
                     className="mt-4 w-full rounded-xl bg-primary py-3.5 text-center text-base font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90 disabled:opacity-40 sm:py-3 sm:text-sm"
                   >
-                    {saving ? "Confirmando…" : "Confirmar agendamento"}
+                    {saving ? L("Confirmando…", "Confirming…") : L("Confirmar agendamento", "Confirm booking")}
                   </button>
                 </form>
               </>
@@ -514,17 +519,20 @@ function BookingPage() {
 }
 
 function Confirmation({
+  lang,
   booking,
   businessPhone,
   countryCode,
   onReset,
 }: {
+  lang: Lang;
   booking: Booking;
   countryCode: string;
   businessPhone: string;
   onReset: () => void;
 }) {
-  const en = detectLang(`${countryCode}000000000`) === "en";
+  const en = lang === "en" || detectLang(`${countryCode}000000000`) === "en";
+  const L = (pt: string, en2: string) => (lang === "en" ? en2 : pt);
   const message = en
     ? `Hello! I just booked an appointment on the website:\n` +
       `• *Service:* ${booking.serviceName}\n` +
@@ -541,12 +549,12 @@ function Confirmation({
 
   return (
     <div className="glass-soft mt-6 rounded-2xl p-5">
-      <p className="text-sm font-semibold text-foreground/80">Agendamento confirmado</p>
+      <p className="text-sm font-semibold text-foreground/80">{L("Agendamento confirmado", "Booking confirmed")}</p>
       <p className="mt-2 font-display text-2xl font-semibold tracking-tight">
         {booking.serviceName}
       </p>
       <p className="text-sm text-foreground/60">
-        {formatLongDateBR(booking.date)} às {booking.time} · {formatPriceEUR(booking.price)}
+        {longDate(lang, booking.date)} {L("às", "at")} {booking.time} · {formatPriceEUR(booking.price)}
       </p>
       <div className="mt-4 whitespace-pre-line rounded-xl border border-border bg-mist/70 p-4 text-sm leading-relaxed text-foreground/70">
         “{message.replace(/\*/g, "")}”
@@ -559,21 +567,21 @@ function Confirmation({
             rel="noreferrer"
             className="flex-1 rounded-xl bg-primary py-3 text-center text-sm font-semibold text-primary-foreground shadow-lg transition-opacity hover:opacity-90"
           >
-            Avisar o profissional no WhatsApp
+            {L("Avisar o profissional no WhatsApp", "Notify the professional on WhatsApp")}
           </a>
         ) : null}
         <a
           href={manageUrl}
           className="glass-soft rounded-xl px-5 py-3 text-center text-sm font-semibold text-foreground/70"
         >
-          Cancelar ou reagendar
+          {L("Cancelar ou reagendar", "Cancel or reschedule")}
         </a>
         <button
           type="button"
           onClick={onReset}
           className="glass-soft rounded-xl px-5 py-3 text-sm font-semibold text-foreground/70"
         >
-          Novo agendamento
+          {L("Novo agendamento", "New booking")}
         </button>
       </div>
     </div>
