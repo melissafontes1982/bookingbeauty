@@ -137,6 +137,10 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     if (error) throw new Error("Não foi possível concluir o agendamento.");
 
+    const { notifyProfessionals } = await import("./push.server");
+    const [, m, d] = data.date.split("-");
+    await notifyProfessionals("🔔 Nova marcação", `${data.name} marcou ${service.name} para ${d}/${m} às ${data.time}.`);
+
     return {
       id: appointment.id,
       token: appointment.manage_token,
@@ -217,6 +221,9 @@ export const cancelManagedBooking = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("appointments").update({ status: "cancelado" }).eq("id", a.id);
     if (error) return { ok: false, error: "Não foi possível cancelar. Tente novamente." };
+    const { notifyProfessionals } = await import("./push.server");
+    const [, m, d] = a.appointment_date.split("-");
+    await notifyProfessionals("⚠️ Marcação cancelada", `${a.client_name} cancelou ${a.service_name} de ${d}/${m} às ${a.start_time.slice(0, 5)}.`);
     return { ok: true, error: null };
   });
 
