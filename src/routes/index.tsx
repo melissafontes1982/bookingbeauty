@@ -571,11 +571,13 @@ function Confirmation({
   const message = en
     ? `Hello! I just booked an appointment on the website:\n` +
       `• *Service:* ${booking.serviceName}\n` +
+      (booking.professionalName ? `• *Professional:* ${booking.professionalName}\n` : "") +
       `• *Date:* ${booking.date.split("-").reverse().join("/")} at ${booking.time}\n` +
       `• *My name:* ${booking.name}\n` +
       `Could you please confirm?`
     : `Olá! Acabei de agendar um horário pelo site:\n` +
     `• *Serviço:* ${booking.serviceName}\n` +
+    (booking.professionalName ? `• *Profissional:* ${booking.professionalName}\n` : "") +
     `• *Data:* ${formatLongDateBR(booking.date)} às ${booking.time}\n` +
     `• *Meu nome:* ${booking.name}\n` +
     `Poderia confirmar, por favor?`;
@@ -588,6 +590,9 @@ function Confirmation({
       <p className="mt-2 font-display text-2xl font-semibold tracking-tight">
         {booking.serviceName}
       </p>
+      {booking.professionalName ? (
+        <p className="text-sm text-foreground/70">{L("com", "with")} {booking.professionalName}</p>
+      ) : null}
       <p className="text-sm text-foreground/60">
         {longDate(lang, booking.date)} {L("às", "at")} {booking.time} · {formatPriceEUR(booking.price)}
       </p>
