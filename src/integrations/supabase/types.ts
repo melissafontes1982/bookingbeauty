@@ -26,6 +26,8 @@ export type Database = {
           id: string
           manage_token: string
           notes: string | null
+          professional_id: string | null
+          professional_name: string | null
           service_id: string | null
           service_name: string
           start_time: string
@@ -42,6 +44,8 @@ export type Database = {
           id?: string
           manage_token?: string
           notes?: string | null
+          professional_id?: string | null
+          professional_name?: string | null
           service_id?: string | null
           service_name: string
           start_time: string
@@ -58,6 +62,8 @@ export type Database = {
           id?: string
           manage_token?: string
           notes?: string | null
+          professional_id?: string | null
+          professional_name?: string | null
           service_id?: string | null
           service_name?: string
           start_time?: string
@@ -69,6 +75,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
             referencedColumns: ["id"]
           },
           {
@@ -158,6 +171,63 @@ export type Database = {
           theme_text?: string | null
           updated_at?: string
           whatsapp_number?: string
+        }
+        Relationships: []
+      }
+      professional_services: {
+        Row: {
+          professional_id: string
+          service_id: string
+        }
+        Insert: {
+          professional_id: string
+          service_id: string
+        }
+        Update: {
+          professional_id?: string
+          service_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_services_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_services_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      professionals: {
+        Row: {
+          active: boolean
+          bio: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string
+        }
+        Insert: {
+          active?: boolean
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          phone?: string
+        }
+        Update: {
+          active?: boolean
+          bio?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
         }
         Relationships: []
       }

@@ -7,6 +7,7 @@ import { AgendaPanel } from "@/components/painel/AgendaPanel";
 import { ClientesPanel } from "@/components/painel/ClientesPanel";
 import { ConfiguracoesPanel } from "@/components/painel/ConfiguracoesPanel";
 import { HorariosPanel } from "@/components/painel/HorariosPanel";
+import { ProfissionaisPanel } from "@/components/painel/ProfissionaisPanel";
 import { ServicosPanel } from "@/components/painel/ServicosPanel";
 import { UsuariosPanel } from "@/components/painel/UsuariosPanel";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,10 +27,11 @@ export const Route = createFileRoute("/_authenticated/painel")({
   component: PainelPage,
 });
 
-type Tab = "agenda" | "servicos" | "clientes" | "horarios" | "usuarios" | "configuracoes";
+type Tab = "agenda" | "profissionais" | "servicos" | "clientes" | "horarios" | "usuarios" | "configuracoes";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "agenda", label: "Agenda" },
+  { id: "profissionais", label: "Profissionais" },
   { id: "servicos", label: "Serviços" },
   { id: "clientes", label: "Clientes" },
   { id: "horarios", label: "Horários" },
@@ -139,6 +141,7 @@ function PainelPage() {
 
         <div className="glass mt-4 rounded-3xl p-4 sm:mt-6 sm:p-7">
           {tab === "agenda" ? <AgendaPanel /> : null}
+          {tab === "profissionais" ? <ProfissionaisPanel /> : null}
           {tab === "servicos" ? <ServicosPanel /> : null}
           {tab === "clientes" ? <ClientesPanel /> : null}
           {tab === "horarios" ? <HorariosPanel /> : null}
