@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { themeToCssVars } from "@/lib/theme";
 import { createPublicBooking, getAvailableSlots } from "@/lib/booking.functions";
-import { getPublicSiteInfo } from "@/lib/public-site.functions";
+import { getPublicProfessionals, getPublicSiteInfo } from "@/lib/public-site.functions";
 import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import { LangSwitch, longDate, useLang, weekdayShort, type Lang } from "@/lib/i18n";
 import {
@@ -52,6 +52,9 @@ function BookingPage() {
   const siteInfoFn = useServerFn(getPublicSiteInfo);
 
   const [serviceId, setServiceId] = useState<string | null>(null);
+  const [professionalId, setProfessionalId] = useState<string | null>(null);
+  const prosFn = useServerFn(getPublicProfessionals);
+  const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: () => prosFn() });
   const [date, setDate] = useState<string>(todayISO());
   const [time, setTime] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -108,12 +111,14 @@ function BookingPage() {
     [siteInfo],
   );
 
+  const servicePros = (professionals ?? []).filter((p) => serviceId && p.serviceIds.includes(serviceId));
+  const needsPro = servicePros.length > 0;
   const { data: slotData, isFetching: loadingSlots } = useQuery({
-    queryKey: ["slots", serviceId, date],
-    enabled: Boolean(serviceId),
+    queryKey: ["slots", serviceId, date, professionalId],
+    enabled: Boolean(serviceId) && (!needsPro || Boolean(professionalId)),
     queryFn: () => {
       if (!serviceId) return Promise.resolve({ slots: [] as string[] });
-      return slotsFn({ data: { serviceId, date } });
+      return slotsFn({ data: { serviceId, date, professionalId: professionalId ?? undefined } });
     },
   });
 
@@ -122,13 +127,13 @@ function BookingPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!serviceId || !time) return;
+    if (!serviceId || !time || (needsPro && !professionalId)) return;
     setSaving(true);
     setError(null);
     try {
       const fullPhone = `${countryCode}${phone.replace(/\D/g, "").replace(/^0+/, "")}`;
       const result = await bookFn({
-        data: { serviceId, date, time, name, phone: fullPhone, notes, email, nif, birthDate },
+        data: { serviceId, professionalId: professionalId ?? undefined, date, time, name, phone: fullPhone, notes, email, nif, birthDate },
       });
       setBooking(result);
     } catch (err) {
@@ -238,6 +243,7 @@ function BookingPage() {
               <Confirmation lang={lang} booking={booking} countryCode={countryCode} businessPhone={settings?.whatsapp_number ?? ""} onReset={() => {
                 setBooking(null);
                 setServiceId(null);
+                setProfessionalId(null);
                 setTime(null);
                 setName("");
                 setPhone("");
@@ -254,6 +260,7 @@ function BookingPage() {
                     lang={lang}
                     onPick={(id) => {
                       setServiceId(id);
+                      setProfessionalId(null);
                       setTime(null);
                     }}
                   />
@@ -266,6 +273,7 @@ function BookingPage() {
                           type="button"
                           onClick={() => {
                             setServiceId(service.id);
+                            setProfessionalId(null);
                             setTime(null);
                           }}
                           className={`rounded-2xl p-4 text-left transition-shadow ${
@@ -290,6 +298,33 @@ function BookingPage() {
                     })}
                   </div>
                 </section>
+
+                {needsPro ? (
+                  <section className="mt-6">
+                    <p className="text-sm font-semibold text-foreground/80">{L("Escolha o profissional", "Choose a professional")}</p>
+                    <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                      {servicePros.map((p) => {
+                        const selected = p.id === professionalId;
+                        return (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => { setProfessionalId(p.id); setTime(null); }}
+                            className={`flex items-center gap-3 rounded-2xl p-4 text-left transition-shadow ${selected ? "bg-primary text-primary-foreground shadow-lg" : "glass-soft hover:shadow-md"}`}
+                          >
+                            <span className={`grid size-10 shrink-0 place-items-center rounded-full font-display text-lg font-semibold ${selected ? "bg-primary-foreground/15" : "bg-brand/10 text-brand-deep"}`}>
+                              {p.name.charAt(0).toUpperCase()}
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-semibold">{p.name}</span>
+                              {p.bio ? <span className={`block truncate text-xs ${selected ? "text-primary-foreground/70" : "text-foreground/50"}`}>{p.bio}</span> : null}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                ) : null}
 
                 <section className="mt-6">
                   <p className="text-sm font-semibold text-foreground/80">{L("Escolha o dia e horário", "Choose date & time")}</p>
