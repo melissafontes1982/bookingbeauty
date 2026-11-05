@@ -247,7 +247,7 @@ export function AgendaPanel() {
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-foreground/60">
-                  {item.service_name} · {item.client_phone} · {item.status}
+                  {item.service_name}{item.professional_name ? ` · com ${item.professional_name}` : ""} · {item.client_phone} · {item.status}
                 </p>
                 {item.notes ? (
                   <p className="mt-1 text-xs text-foreground/50">{item.notes}</p>
