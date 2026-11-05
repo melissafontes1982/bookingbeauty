@@ -6,10 +6,12 @@ import { computeSlots, toMinutes, toTime, type ScheduleSetting } from "./schedul
 const availabilitySchema = z.object({
   serviceId: z.string().uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  professionalId: z.string().uuid().optional(),
 });
 
 const bookingSchema = z.object({
   serviceId: z.string().uuid(),
+  professionalId: z.string().uuid().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.string().regex(/^\d{2}:\d{2}$/),
   name: z.string().trim().min(2).max(120),
@@ -20,7 +22,7 @@ const bookingSchema = z.object({
   birthDate: z.union([z.literal(""), z.string().regex(/^\d{4}-\d{2}-\d{2}$/)]).optional(),
 });
 
-async function loadDay(date: string, serviceId: string, excludeId?: string) {
+async function loadDay(date: string, serviceId: string, excludeId?: string, professionalId?: string | null) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
   const [{ data: service }, { data: settings }, { data: appointments }, { data: blocks }] =
@@ -29,14 +31,16 @@ async function loadDay(date: string, serviceId: string, excludeId?: string) {
       supabaseAdmin.from("schedule_settings").select("*"),
       supabaseAdmin
         .from("appointments")
-        .select("id, start_time, end_time, buffer_min")
+        .select("id, start_time, end_time, buffer_min, professional_id")
         .eq("appointment_date", date)
         .neq("status", "cancelado"),
       supabaseAdmin.from("schedule_blocks").select("start_time, end_time").eq("block_date", date),
     ]);
 
   const busy = [
-    ...(appointments ?? []).filter((a) => a.id !== excludeId).map((a) => ({
+    ...(appointments ?? [])
+      .filter((a) => a.id !== excludeId)
+      .filter((a) => !professionalId || a.professional_id === professionalId).map((a) => ({
       start: toMinutes(a.start_time),
       end: toMinutes(a.end_time) + (a.buffer_min ?? 0),
     })),
@@ -52,7 +56,7 @@ async function loadDay(date: string, serviceId: string, excludeId?: string) {
 export const getAvailableSlots = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => availabilitySchema.parse(data))
   .handler(async ({ data }) => {
-    const { service, setting, busy } = await loadDay(data.date, data.serviceId);
+    const { service, setting, busy } = await loadDay(data.date, data.serviceId, undefined, data.professionalId);
     if (!service) return { slots: [] as string[] };
 
     const now = new Date();
@@ -72,10 +76,21 @@ export const createPublicBooking = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => bookingSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { service, setting, busy } = await loadDay(data.date, data.serviceId);
+    const { service, setting, busy } = await loadDay(data.date, data.serviceId, undefined, data.professionalId);
 
     if (!service || !service.active) {
       throw new Error("Serviço indisponível.");
+    }
+
+    let professional: { id: string; name: string } | null = null;
+    if (data.professionalId) {
+      const { data: pro } = await supabaseAdmin
+        .from("professionals").select("id, name, active").eq("id", data.professionalId).maybeSingle();
+      const { data: link } = await supabaseAdmin
+        .from("professional_services").select("service_id")
+        .eq("professional_id", data.professionalId).eq("service_id", service.id).maybeSingle();
+      if (!pro || !pro.active || !link) throw new Error("Profissional indisponível para este serviço.");
+      professional = { id: pro.id, name: pro.name };
     }
 
     const now = new Date();
@@ -125,6 +140,8 @@ export const createPublicBooking = createServerFn({ method: "POST" })
         client_name: data.name,
         client_phone: digits,
         service_name: service.name,
+        professional_id: professional?.id ?? null,
+        professional_name: professional?.name ?? null,
         appointment_date: data.date,
         start_time: data.time,
         end_time: toTime(start + service.duration_min),
@@ -139,12 +156,13 @@ export const createPublicBooking = createServerFn({ method: "POST" })
 
     const { notifyProfessionals } = await import("./push.server");
     const [, m, d] = data.date.split("-");
-    await notifyProfessionals("🔔 Nova marcação", `${data.name} marcou ${service.name} para ${d}/${m} às ${data.time}.`);
+    await notifyProfessionals("🔔 Nova marcação", `${data.name} marcou ${service.name}${professional ? ` com ${professional.name}` : ""} para ${d}/${m} às ${data.time}.`);
 
     return {
       id: appointment.id,
       token: appointment.manage_token,
       serviceName: service.name,
+      professionalName: professional?.name ?? null,
       price: Number(service.price),
       date: data.date,
       time: data.time,
@@ -162,7 +180,7 @@ async function findManaged(token: string, phoneLast4: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("appointments")
-    .select("id, service_id, service_name, appointment_date, start_time, status, client_name, client_phone")
+    .select("id, service_id, service_name, appointment_date, start_time, status, client_name, client_phone, professional_id")
     .eq("manage_token", token)
     .maybeSingle();
   if (!data || !data.client_phone.replace(/\D/g, "").endsWith(phoneLast4)) return null;
@@ -200,7 +218,7 @@ export const getRescheduleSlots = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const a = await findManaged(data.token, data.phoneLast4);
     if (!a?.service_id) return { slots: [] as string[] };
-    const { service, setting, busy } = await loadDay(data.date, a.service_id, a.id);
+    const { service, setting, busy } = await loadDay(data.date, a.service_id, a.id, a.professional_id);
     if (!service) return { slots: [] as string[] };
     const now = new Date();
     return {
@@ -236,7 +254,7 @@ export const rescheduleManagedBooking = createServerFn({ method: "POST" })
     if (!a?.service_id) return { ok: false, error: "Dados não conferem." };
     if (a.status === "cancelado") return { ok: false, error: "Este agendamento está cancelado. Faça um novo agendamento." };
     if (isPast(a.appointment_date, a.start_time)) return { ok: false, error: "Este horário já passou." };
-    const { service, setting, busy } = await loadDay(data.date, a.service_id, a.id);
+    const { service, setting, busy } = await loadDay(data.date, a.service_id, a.id, a.professional_id);
     if (!service) return { ok: false, error: "Serviço indisponível." };
     const now = new Date();
     const slots = computeSlots({
