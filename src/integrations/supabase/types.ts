@@ -93,6 +93,47 @@ export type Database = {
           },
         ]
       }
+      client_packages: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          last_used_at: string | null
+          name: string
+          notes: string | null
+          total_sessions: number
+          used_sessions: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name: string
+          notes?: string | null
+          total_sessions?: number
+          used_sessions?: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          notes?: string | null
+          total_sessions?: number
+          used_sessions?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           birth_date: string | null
@@ -173,6 +214,45 @@ export type Database = {
           whatsapp_number?: string
         }
         Relationships: []
+      }
+      package_sessions: {
+        Row: {
+          appointment_id: string | null
+          id: string
+          note: string | null
+          package_id: string
+          used_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          id?: string
+          note?: string | null
+          package_id: string
+          used_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          id?: string
+          note?: string | null
+          package_id?: string
+          used_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "package_sessions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "package_sessions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "client_packages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       professional_services: {
         Row: {
