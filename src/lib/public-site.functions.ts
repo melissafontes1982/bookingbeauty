@@ -43,14 +43,14 @@ export const getPublicSiteInfo = createServerFn({ method: "GET" }).handler(
   },
 );
 
-export type PublicProfessional = { id: string; name: string; bio: string | null; serviceIds: string[] };
+export type PublicProfessional = { id: string; name: string; bio: string | null; photo_url: string | null; serviceIds: string[] };
 
 /** Active professionals with the services they perform (public display fields only). */
 export const getPublicProfessionals = createServerFn({ method: "GET" }).handler(
   async (): Promise<PublicProfessional[]> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const [{ data: pros }, { data: links }] = await Promise.all([
-      supabaseAdmin.from("professionals").select("id, name, bio").eq("active", true).order("name"),
+      supabaseAdmin.from("professionals").select("id, name, bio, photo_url").eq("active", true).order("name"),
       supabaseAdmin.from("professional_services").select("professional_id, service_id"),
     ]);
     return (pros ?? []).map((p) => ({

@@ -212,6 +212,7 @@ export type Database = {
           id: string
           name: string
           phone: string
+          photo_url: string | null
         }
         Insert: {
           active?: boolean
@@ -220,6 +221,7 @@ export type Database = {
           id?: string
           name: string
           phone?: string
+          photo_url?: string | null
         }
         Update: {
           active?: boolean
@@ -228,6 +230,7 @@ export type Database = {
           id?: string
           name?: string
           phone?: string
+          photo_url?: string | null
         }
         Relationships: []
       }

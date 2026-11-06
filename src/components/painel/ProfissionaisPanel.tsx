@@ -10,10 +10,33 @@ type Draft = {
   phone: string;
   bio: string;
   active: boolean;
+  photo: string | null;
   serviceIds: string[];
 };
 
-const emptyDraft: Draft = { name: "", phone: "", bio: "", active: true, serviceIds: [] };
+function resizePhoto(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const size = 320;
+        const side = Math.min(img.width, img.height);
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        canvas.getContext("2d")!.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = String(reader.result);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+const emptyDraft: Draft = { name: "", phone: "", bio: "", active: true, photo: null, serviceIds: [] };
 
 export function ProfissionaisPanel() {
   const queryClient = useQueryClient();
@@ -59,6 +82,7 @@ export function ProfissionaisPanel() {
         phone: v.phone.replace(/\D/g, ""),
         bio: v.bio.trim() || null,
         active: v.active,
+        photo_url: v.photo,
       };
       let id = v.id;
       if (id) {
@@ -122,6 +146,33 @@ export function ProfissionaisPanel() {
           }}
           className="glass-soft space-y-3 rounded-2xl p-5"
         >
+          <div className="flex items-center gap-4">
+            {draft.photo ? (
+              <img src={draft.photo} alt="Foto" className="size-20 rounded-full object-cover" />
+            ) : (
+              <div className="grid size-20 place-items-center rounded-full bg-background/60 text-xs text-foreground/50">Sem foto</div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <label className="cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground">
+                {draft.photo ? "Trocar foto" : "Adicionar foto"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0];
+                    if (f) setDraft({ ...draft, photo: await resizePhoto(f) });
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              {draft.photo ? (
+                <button type="button" onClick={() => setDraft({ ...draft, photo: null })} className="rounded-xl px-4 py-2.5 text-xs font-semibold text-destructive">
+                  Remover
+                </button>
+              ) : null}
+            </div>
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <input
               required
@@ -209,7 +260,10 @@ export function ProfissionaisPanel() {
         {(pros ?? []).map((p) => (
           <div key={p.id} className="glass-soft rounded-2xl p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-sm font-semibold">{p.name}</p>
+              <div className="flex items-center gap-3">
+                {p.photo_url ? <img src={p.photo_url} alt={p.name} className="size-12 rounded-full object-cover" /> : null}
+                <p className="text-sm font-semibold">{p.name}</p>
+              </div>
               <p className="text-xs text-foreground/60">{p.active ? "ativo" : "inativo"}</p>
             </div>
             {p.bio ? <p className="mt-1 text-xs text-foreground/50">{p.bio}</p> : null}
@@ -226,6 +280,7 @@ export function ProfissionaisPanel() {
                     phone: p.phone,
                     bio: p.bio ?? "",
                     active: p.active,
+                    photo: p.photo_url ?? null,
                     serviceIds: p.serviceIds,
                   })
                 }

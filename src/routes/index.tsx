@@ -312,9 +312,13 @@ function BookingPage() {
                             onClick={() => { setProfessionalId(p.id); setTime(null); }}
                             className={`flex items-center gap-3 rounded-2xl p-4 text-left transition-shadow ${selected ? "bg-primary text-primary-foreground shadow-lg" : "glass-soft hover:shadow-md"}`}
                           >
-                            <span className={`grid size-10 shrink-0 place-items-center rounded-full font-display text-lg font-semibold ${selected ? "bg-primary-foreground/15" : "bg-brand/10 text-brand-deep"}`}>
+                            {p.photo_url ? (
+                              <img src={p.photo_url} alt={p.name} className="size-14 shrink-0 rounded-full object-cover" />
+                            ) : (
+                            <span className={`grid size-14 shrink-0 place-items-center rounded-full font-display text-lg font-semibold ${selected ? "bg-primary-foreground/15" : "bg-brand/10 text-brand-deep"}`}>
                               {p.name.charAt(0).toUpperCase()}
                             </span>
+                            )}
                             <span className="min-w-0">
                               <span className="block truncate text-sm font-semibold">{p.name}</span>
                               {p.bio ? <span className={`block truncate text-xs ${selected ? "text-primary-foreground/70" : "text-foreground/50"}`}>{p.bio}</span> : null}
