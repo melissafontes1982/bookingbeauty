@@ -92,7 +92,7 @@ export function PacotesCliente({ clientId }: { clientId: string }) {
 
   const adjust = useMutation({
     mutationFn: async ({ id, field, value }: { id: string; field: "used_sessions" | "total_sessions"; value: number }) => {
-      const { error } = await supabase.from("client_packages").update({ [field]: value }).eq("id", id);
+      const { error } = await supabase.from("client_packages").update(field === "used_sessions" ? { used_sessions: value } : { total_sessions: value }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: refresh,
