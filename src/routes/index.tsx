@@ -83,7 +83,27 @@ function BookingPage() {
 
   const { data: siteInfo } = useQuery({
     queryKey: ["public-site-info"],
-    queryFn: () => siteInfoFn(),
+    queryFn: async () => {
+      try {
+        return await siteInfoFn();
+      } catch {
+        const [{ data: s }, { data: sch }] = await Promise.all([
+          supabase
+            .from("general_settings")
+            .select(
+              "company_name, business_segment, whatsapp_number, logo_url, theme_primary, theme_button, theme_button_text, theme_text, theme_background",
+            )
+            .eq("id", 1)
+            .maybeSingle(),
+          supabase.from("schedule_settings").select("weekday, is_open, open_time, close_time"),
+        ]);
+        return {
+          settings: s ?? null,
+          openWeekdays: (sch ?? []).filter((x) => x.is_open).map((x) => x.weekday),
+          hours: sch ?? [],
+        };
+      }
+    },
   });
   const settings = siteInfo?.settings ?? null;
 
