@@ -1,3 +1,4 @@
+import { useOneSession } from "@/components/painel/PacotesCliente";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
@@ -78,6 +79,33 @@ export function AgendaPanel() {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["appointments"] }),
+  });
+
+  const complete = useMutation({
+    mutationFn: async (item: { id: string; client_id: string | null; service_name: string; appointment_date: string }) => {
+      const { error } = await supabase.from("appointments").update({ status: "concluido" }).eq("id", item.id);
+      if (error) throw error;
+      if (!item.client_id) return;
+      const { data: pkgs } = await supabase
+        .from("client_packages")
+        .select("id,name,total_sessions,used_sessions")
+        .eq("client_id", item.client_id);
+      const active = (pkgs ?? []).filter((p) => p.used_sessions < p.total_sessions);
+      for (const p of active) {
+        const left = p.total_sessions - p.used_sessions;
+        if (window.confirm(`Abater 1 sessão do pacote "${p.name}"? (${left} restantes)`)) {
+          await useOneSession(p.id, item.id, `${item.service_name} · ${item.appointment_date}`);
+          window.alert(`Sessão abatida. Restam ${left - 1}.`);
+          break;
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["appointments"] });
+      queryClient.invalidateQueries({ queryKey: ["client-packages"] });
+      queryClient.invalidateQueries({ queryKey: ["all-packages"] });
+    },
+    onError: (e) => window.alert((e as Error).message),
   });
 
   const remove = useMutation({
@@ -295,6 +323,15 @@ export function AgendaPanel() {
                   >
                     {item.status === "cancelado" ? "Avisar Cancelamento por SMS" : "Enviar SMS"}
                   </a>
+                  {item.status !== "cancelado" && item.status !== "concluido" ? (
+                    <button
+                      type="button"
+                      onClick={() => complete.mutate(item)}
+                      className="flex-1 rounded-xl bg-primary px-4 py-3 text-xs font-semibold text-primary-foreground sm:flex-none sm:py-2"
+                    >
+                      Concluir
+                    </button>
+                  ) : null}
                   {item.status !== "cancelado" ? (
                     <button
                       type="button"

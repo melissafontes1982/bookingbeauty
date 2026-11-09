@@ -13,6 +13,7 @@ const normalize = (s: string) =>
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatDateBR, formatLongDateBR } from "@/lib/schedule";
+import { PacotesCliente, STALE_DAYS } from "@/components/painel/PacotesCliente";
 
 type Draft = {
   id?: string;
@@ -49,6 +50,26 @@ export function ClientesPanel() {
       return data;
     },
   });
+
+  const { data: allPkgs } = useQuery({
+    queryKey: ["all-packages"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_packages")
+        .select("client_id,total_sessions,used_sessions,last_used_at,created_at");
+      if (error) throw error;
+      return data;
+    },
+  });
+  const staleIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const p of allPkgs ?? []) {
+      if (p.used_sessions >= p.total_sessions) continue;
+      const ref = p.last_used_at ?? p.created_at;
+      if (Date.now() - new Date(ref).getTime() > STALE_DAYS * 86400000) s.add(p.client_id);
+    }
+    return s;
+  }, [allPkgs]);
 
   const filtered = useMemo(() => {
     const term = normalize(search.trim());
@@ -277,7 +298,7 @@ export function ClientesPanel() {
                 onClick={() => setOpenId(openId === client.id ? null : client.id)}
                 className="glass-soft rounded-xl px-4 py-2 text-xs font-semibold text-foreground/70"
               >
-                {openId === client.id ? "Ocultar histórico" : "Histórico"}
+                {openId === client.id ? "Ocultar detalhes" : "Pacotes e histórico"}
               </button>
               <button
                 type="button"
@@ -305,6 +326,17 @@ export function ClientesPanel() {
               </button>
             </div>
 
+            {staleIds.has(client.id) ? (
+              <a
+                href={`https://wa.me/${client.phone.replace(/\D/g, "")}`}
+                target="_blank"
+                rel="noopener"
+                className="mt-2 inline-block rounded-full bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive"
+              >
+                ⏰ Pacote parado há +{STALE_DAYS} dias · chamar no WhatsApp
+              </a>
+            ) : null}
+            {openId === client.id ? <PacotesCliente clientId={client.id} /> : null}
             {openId === client.id ? (
               <ul className="mt-3 space-y-1 border-t border-border pt-3 text-xs text-foreground/60">
                 {(history ?? []).length === 0 ? (
