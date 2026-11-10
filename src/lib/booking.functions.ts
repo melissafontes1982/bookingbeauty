@@ -171,6 +171,20 @@ export const createPublicBooking = createServerFn({ method: "POST" })
     };
   });
 
+export const notifyNewBooking = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    z.object({ title: z.string().max(80), body: z.string().max(300) }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { notifyProfessionals } = await import("./push.server");
+      await notifyProfessionals(data.title, data.body);
+    } catch {
+      /* sem chave de servidor (ex.: Vercel) */
+    }
+    return { ok: true };
+  });
+
 const manageSchema = z.object({
   token: z.string().uuid(),
   phoneLast4: z.string().regex(/^\d{4}$/),
