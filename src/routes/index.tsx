@@ -139,14 +139,15 @@ function BookingPage() {
   const { data: slotData, isFetching: loadingSlots } = useQuery({
     queryKey: ["slots", serviceId, date, professionalId],
     enabled: Boolean(serviceId) && (!needsPro || Boolean(professionalId)),
-    queryFn: () => {
-      if (!serviceId) return Promise.resolve({ slots: [] as string[] });
-      return supabase
-        .rpc("public_available_slots", { _service_id: serviceId, _date: date, ...(professionalId ? { _professional_id: professionalId } : {}) })
-        .then(({ data, error }) => {
-          if (error) throw error;
-          return { slots: (data ?? []) as string[] };
-        });
+    queryFn: async () => {
+      if (!serviceId) return { slots: [] as string[] };
+      const { data, error } = await supabase.rpc("public_available_slots", {
+        _service_id: serviceId,
+        _date: date,
+        ...(professionalId ? { _professional_id: professionalId } : {}),
+      });
+      if (error) throw error;
+      return { slots: (data ?? []) as string[] };
     },
   });
 
@@ -167,10 +168,10 @@ function BookingPage() {
         _time: time,
         _name: name,
         _phone: fullPhone,
-        _notes: notes || undefined,
-        _email: email || undefined,
-        _nif: nif || undefined,
-        _birth_date: birthDate || undefined,
+        ...(notes ? { _notes: notes } : {}),
+        ...(email ? { _email: email } : {}),
+        ...(nif ? { _nif: nif } : {}),
+        ...(birthDate ? { _birth_date: birthDate } : {}),
       });
       if (rpcError) throw new Error(rpcError.message);
       const result = rpcData as unknown as Booking;
