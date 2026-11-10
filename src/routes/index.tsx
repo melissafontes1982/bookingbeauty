@@ -49,11 +49,9 @@ function BookingPage() {
   const L = (pt: string, en: string) => (lang === "en" ? en : pt);
   const slotsFn = useServerFn(getAvailableSlots);
   const bookFn = useServerFn(createPublicBooking);
-  const siteInfoFn = useServerFn(getPublicSiteInfo);
 
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
-  const prosFn = useServerFn(getPublicProfessionals);
   const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: async () => {
       const [{ data: pros }, { data: links }] = await Promise.all([
         supabase.from("professionals").select("id, name, bio, photo_url").eq("active", true).order("name"),
