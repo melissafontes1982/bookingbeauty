@@ -57,6 +57,13 @@
       "when": 1794248376630,
       "tag": "0007_public_branding_read",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794322843237,
+      "tag": "0008_public_professionals_read",
+      "breakpoints": true
     }
   ]
 }

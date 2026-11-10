@@ -54,7 +54,16 @@ function BookingPage() {
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const prosFn = useServerFn(getPublicProfessionals);
-  const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: () => prosFn() });
+  const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: async () => {
+      const [{ data: pros }, { data: links }] = await Promise.all([
+        supabase.from("professionals").select("id, name, bio, photo_url").eq("active", true).order("name"),
+        supabase.from("professional_services").select("professional_id, service_id"),
+      ]);
+      return (pros ?? []).map((p) => ({
+        ...p,
+        serviceIds: (links ?? []).filter((l) => l.professional_id === p.id).map((l) => l.service_id),
+      }));
+    } });
   const [date, setDate] = useState<string>(todayISO());
   const [time, setTime] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -84,9 +93,7 @@ function BookingPage() {
   const { data: siteInfo } = useQuery({
     queryKey: ["public-site-info"],
     queryFn: async () => {
-      try {
-        return await siteInfoFn();
-      } catch {
+      {
         const [{ data: s }, { data: sch }] = await Promise.all([
           supabase
             .from("general_settings")
