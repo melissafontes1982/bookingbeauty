@@ -78,6 +78,13 @@
       "when": 1794323818558,
       "tag": "0010_fix_public_slots_append",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794326379076,
+      "tag": "0011_public_professionals_rpc",
+      "breakpoints": true
     }
   ]
 }
