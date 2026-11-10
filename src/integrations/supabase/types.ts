@@ -462,6 +462,25 @@ export type Database = {
         }
         Returns: boolean
       }
+      public_available_slots: {
+        Args: { _date: string; _professional_id?: string; _service_id: string }
+        Returns: string[]
+      }
+      public_create_booking: {
+        Args: {
+          _birth_date?: string
+          _date: string
+          _email?: string
+          _name: string
+          _nif?: string
+          _notes?: string
+          _phone: string
+          _professional_id: string
+          _service_id: string
+          _time: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin"

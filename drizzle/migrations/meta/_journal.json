@@ -64,6 +64,13 @@
       "when": 1794322843237,
       "tag": "0008_public_professionals_read",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794323780449,
+      "tag": "0009_public_booking_rpcs",
+      "breakpoints": true
     }
   ]
 }
