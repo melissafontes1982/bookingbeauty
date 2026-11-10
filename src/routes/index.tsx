@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { themeToCssVars } from "@/lib/theme";
-import { createPublicBooking, getAvailableSlots } from "@/lib/booking.functions";
+import { createPublicBooking, notifyNewBooking } from "@/lib/booking.functions";
 import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import { LangSwitch, longDate, useLang, weekdayShort, type Lang } from "@/lib/i18n";
 import {
@@ -46,8 +46,7 @@ type Booking = Awaited<ReturnType<typeof createPublicBooking>>;
 function BookingPage() {
   const lang = useLang();
   const L = (pt: string, en: string) => (lang === "en" ? en : pt);
-  const slotsFn = useServerFn(getAvailableSlots);
-  const bookFn = useServerFn(createPublicBooking);
+  const notifyFn = useServerFn(notifyNewBooking);
 
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
@@ -140,9 +139,15 @@ function BookingPage() {
   const { data: slotData, isFetching: loadingSlots } = useQuery({
     queryKey: ["slots", serviceId, date, professionalId],
     enabled: Boolean(serviceId) && (!needsPro || Boolean(professionalId)),
-    queryFn: () => {
-      if (!serviceId) return Promise.resolve({ slots: [] as string[] });
-      return slotsFn({ data: { serviceId, date, professionalId: professionalId ?? undefined } });
+    queryFn: async () => {
+      if (!serviceId) return { slots: [] as string[] };
+      const { data, error } = await supabase.rpc("public_available_slots", {
+        _service_id: serviceId,
+        _date: date,
+        ...(professionalId ? { _professional_id: professionalId } : {}),
+      });
+      if (error) throw error;
+      return { slots: (data ?? []) as string[] };
     },
   });
 
@@ -156,10 +161,22 @@ function BookingPage() {
     setError(null);
     try {
       const fullPhone = `${countryCode}${phone.replace(/\D/g, "").replace(/^0+/, "")}`;
-      const result = await bookFn({
-        data: { serviceId, professionalId: professionalId ?? undefined, date, time, name, phone: fullPhone, notes, email, nif, birthDate },
+      const { data: rpcData, error: rpcError } = await supabase.rpc("public_create_booking", {
+        _service_id: serviceId,
+        _professional_id: (professionalId ?? null) as unknown as string,
+        _date: date,
+        _time: time,
+        _name: name,
+        _phone: fullPhone,
+        ...(notes ? { _notes: notes } : {}),
+        ...(email ? { _email: email } : {}),
+        ...(nif ? { _nif: nif } : {}),
+        ...(birthDate ? { _birth_date: birthDate } : {}),
       });
-      setBooking(result);
+      if (rpcError) throw new Error(rpcError.message);
+      const result = rpcData as unknown as Booking;
+      setBooking({ ...result, price: Number(result.price) });
+      notifyFn({ data: { title: "🔔 Nova marcação", body: `${result.name} marcou ${result.serviceName}${result.professionalName ? ` com ${result.professionalName}` : ""} para ${date.slice(8, 10)}/${date.slice(5, 7)} às ${time}.` } }).catch(() => {});
     } catch (err) {
       setError(err instanceof Error ? err.message : L("Não foi possível agendar.", "Could not complete the booking."));
     } finally {
