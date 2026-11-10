@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { themeToCssVars } from "@/lib/theme";
 import { createPublicBooking, getAvailableSlots } from "@/lib/booking.functions";
-import { getPublicProfessionals, getPublicSiteInfo } from "@/lib/public-site.functions";
 import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import { LangSwitch, longDate, useLang, weekdayShort, type Lang } from "@/lib/i18n";
 import {
@@ -49,12 +48,19 @@ function BookingPage() {
   const L = (pt: string, en: string) => (lang === "en" ? en : pt);
   const slotsFn = useServerFn(getAvailableSlots);
   const bookFn = useServerFn(createPublicBooking);
-  const siteInfoFn = useServerFn(getPublicSiteInfo);
 
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
-  const prosFn = useServerFn(getPublicProfessionals);
-  const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: () => prosFn() });
+  const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: async () => {
+      const [{ data: pros }, { data: links }] = await Promise.all([
+        supabase.from("professionals").select("id, name, bio, photo_url").eq("active", true).order("name"),
+        supabase.from("professional_services").select("professional_id, service_id"),
+      ]);
+      return (pros ?? []).map((p) => ({
+        ...p,
+        serviceIds: (links ?? []).filter((l) => l.professional_id === p.id).map((l) => l.service_id),
+      }));
+    } });
   const [date, setDate] = useState<string>(todayISO());
   const [time, setTime] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -84,9 +90,7 @@ function BookingPage() {
   const { data: siteInfo } = useQuery({
     queryKey: ["public-site-info"],
     queryFn: async () => {
-      try {
-        return await siteInfoFn();
-      } catch {
+      {
         const [{ data: s }, { data: sch }] = await Promise.all([
           supabase
             .from("general_settings")

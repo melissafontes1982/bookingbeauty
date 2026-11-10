@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/((?!assets/|_build/|api/|.*\\.[a-z0-9]+$).*)", "destination": "/" }
+  ]
+}
