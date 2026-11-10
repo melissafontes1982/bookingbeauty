@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { themeToCssVars } from "@/lib/theme";
 import { createPublicBooking, getAvailableSlots } from "@/lib/booking.functions";
-import { getPublicProfessionals, getPublicSiteInfo } from "@/lib/public-site.functions";
 import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import { LangSwitch, longDate, useLang, weekdayShort, type Lang } from "@/lib/i18n";
 import {
