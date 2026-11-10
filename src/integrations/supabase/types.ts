@@ -455,6 +455,7 @@ export type Database = {
     }
     Functions: {
       claim_authorized_admin: { Args: never; Returns: boolean }
+      get_public_professionals: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
