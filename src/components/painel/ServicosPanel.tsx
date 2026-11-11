@@ -3,8 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatPriceEUR } from "@/lib/schedule";
-import { useServerFn } from "@tanstack/react-start";
-import { translateService } from "@/lib/translate.functions";
+
 
 type Draft = {
   id?: string;
@@ -28,6 +27,24 @@ const emptyDraft: Draft = {
   price: 0,
   active: true,
 };
+
+async function translateText(text: string): Promise<string> {
+  if (!text.trim()) return "";
+  try {
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.trim())}&langpair=pt|en`;
+    const res = await fetch(url);
+    if (!res.ok) return "";
+    const data = await res.json();
+    const translated = data?.responseData?.translatedText;
+    if (typeof translated === "string") {
+      const doc = new DOMParser().parseFromString(translated, "text/html");
+      return doc.body.textContent || translated;
+    }
+    return "";
+  } catch {
+    return "";
+  }
+}
 
 export function ServicosPanel() {
   const queryClient = useQueryClient();
@@ -81,9 +98,9 @@ export function ServicosPanel() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-services"] }),
   });
 
-  const translateFn = useServerFn(translateService);
-  const [translating, setTranslating] = useState(false);
+   const [translating, setTranslating] = useState(false);
   const [translateMsg, setTranslateMsg] = useState<string | null>(null);
+
   async function autoTranslate() {
     if (!draft || !draft.name.trim()) {
       setTranslateMsg("Escreva primeiro o nome em português.");
@@ -92,17 +109,32 @@ export function ServicosPanel() {
     setTranslating(true);
     setTranslateMsg(null);
     try {
-      const r = await translateFn({ data: { name: draft.name, description: draft.description } });
-      if (r.ok) {
-        setDraft((d) => (d ? { ...d, name_en: r.name_en ?? "", description_en: r.description_en ?? "" } : d));
-        setTranslateMsg("Tradução gerada. Pode ajustar antes de salvar.");
-      } else setTranslateMsg(r.error ?? "Não foi possível traduzir.");
+      const [translatedName, translatedDesc] = await Promise.all([
+        translateText(draft.name),
+        draft.description?.trim() ? translateText(draft.description) : Promise.resolve(""),
+      ]);
+
+      if (translatedName) {
+        setDraft((d) =>
+          d
+            ? {
+                ...d,
+                name_en: translatedName,
+                description_en: translatedDesc || d.description_en,
+              }
+            : d
+        );
+        setTranslateMsg("Tradução gerada com sucesso! Pode ajustar antes de salvar.");
+      } else {
+        setTranslateMsg("Não foi possível traduzir no momento.");
+      }
     } catch {
-      setTranslateMsg("Não foi possível traduzir.");
+      setTranslateMsg("Não foi possível traduzir no momento.");
     } finally {
       setTranslating(false);
     }
   }
+
 
   return (
     <div className="space-y-5">
@@ -148,7 +180,7 @@ export function ServicosPanel() {
               disabled={translating}
               className="glass-soft rounded-xl px-3 py-2 text-xs font-semibold text-primary disabled:opacity-60"
             >
-              {translating ? "A traduzir…" : "✨ Traduzir com IA"}
+              {translating ? "A traduzir…" : "✨ Traduzir"}
             </button>
           </div>
           {translateMsg ? <p className="text-xs text-foreground/60">{translateMsg}</p> : null}
