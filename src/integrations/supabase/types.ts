@@ -401,9 +401,11 @@ export type Database = {
           buffer_min: number
           created_at: string
           description: string | null
+          description_en: string | null
           duration_min: number
           id: string
           name: string
+          name_en: string | null
           price: number
         }
         Insert: {
@@ -411,9 +413,11 @@ export type Database = {
           buffer_min?: number
           created_at?: string
           description?: string | null
+          description_en?: string | null
           duration_min?: number
           id?: string
           name: string
+          name_en?: string | null
           price?: number
         }
         Update: {
@@ -421,9 +425,11 @@ export type Database = {
           buffer_min?: number
           created_at?: string
           description?: string | null
+          description_en?: string | null
           duration_min?: number
           id?: string
           name?: string
+          name_en?: string | null
           price?: number
         }
         Relationships: []
