@@ -318,7 +318,7 @@ function BookingPage() {
                               : "glass-soft hover:shadow-md"
                           }`}
                         >
-                          <p className="text-sm font-semibold">{service.name}</p>
+                          <p className="text-sm font-semibold">{(lang === "en" && service.name_en) || service.name}</p>
                           <p
                             className={`mt-1 text-xs ${
                               selected ? "text-primary-foreground/70" : "text-foreground/50"
@@ -574,7 +574,7 @@ function BookingPage() {
 
                   {selectedService && time ? (
                     <p className="mt-3 text-xs text-foreground/60">
-                      {selectedService.name} · {longDate(lang, date)} {L("às", "at")} {time} ·{" "}
+                      {(lang === "en" && selectedService.name_en) || selectedService.name} · {longDate(lang, date)} {L("às", "at")} {time} ·{" "}
                       {formatPriceEUR(Number(selectedService.price))}
                     </p>
                   ) : null}
