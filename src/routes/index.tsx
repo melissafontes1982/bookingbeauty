@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
   component: BookingPage,
 });
 
-type Booking = Awaited<ReturnType<typeof createPublicBooking>>;
+type Booking = Awaited<ReturnType<typeof createPublicBooking>> & { professionalPhone?: string | null };
 
 function BookingPage() {
   const lang = useLang();
@@ -625,7 +625,7 @@ function Confirmation({
     `• *Data:* ${formatLongDateBR(booking.date)} às ${booking.time}\n` +
     `• *Meu nome:* ${booking.name}\n` +
     `Poderia confirmar, por favor?`;
-  const link = buildContactWhatsAppLink(businessPhone, message);
+  const link = buildContactWhatsAppLink(booking.professionalPhone || businessPhone, message);
   const manageUrl = `/agendamento/${booking.token}`;
 
   return (
