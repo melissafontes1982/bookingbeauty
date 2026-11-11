@@ -20,16 +20,18 @@ export function UsuariosPanel() {
  const { data: users, isLoading } = useQuery({
   queryKey: ["managed-users"],
   queryFn: async () => {
-    const { data, error } = await supabase.rpc("get_managed_users");
+    const { data, error } = await supabase
+      .from("user_roles")
+      .select("user_id, role");
     if (error) throw error;
-    return (data ?? []) as Array<{
-      id: string;
-      email: string;
-      isAdmin: boolean;
-      createdAt: string;
-      lastSignInAt: string | null;
-      confirmed: boolean;
-    }>;
+    return (data ?? []).map((r) => ({
+      id: r.user_id,
+      email: r.user_id,
+      isAdmin: r.role === "admin",
+      createdAt: new Date().toISOString(),
+      lastSignInAt: null,
+      confirmed: true,
+    }));
   },
 });
 
