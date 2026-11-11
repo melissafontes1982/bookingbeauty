@@ -1,14 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-import {
-  createManagedUser,
-  deleteManagedUser,
-  listManagedUsers,
-  setManagedUserAdmin,
-  updateManagedUserPassword,
-} from "@/lib/admin-users.functions";
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -16,12 +9,6 @@ function messageOf(error: unknown) {
 
 export function UsuariosPanel() {
   const queryClient = useQueryClient();
-  const listFn = useServerFn(listManagedUsers);
-  const createFn = useServerFn(createManagedUser);
-  const roleFn = useServerFn(setManagedUserAdmin);
-  const passwordFn = useServerFn(updateManagedUserPassword);
-  const removeFn = useServerFn(deleteManagedUser);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isAdmin, setIsAdmin] = useState(true);
@@ -30,10 +17,21 @@ export function UsuariosPanel() {
   const [passwordFor, setPasswordFor] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
 
-  const { data: users, isLoading } = useQuery({
-    queryKey: ["managed-users"],
-    queryFn: () => listFn(),
-  });
+ const { data: users, isLoading } = useQuery({
+  queryKey: ["managed-users"],
+  queryFn: async () => {
+    const { data, error } = await supabase.rpc("get_managed_users");
+    if (error) throw error;
+    return (data ?? []) as Array<{
+      id: string;
+      email: string;
+      isAdmin: boolean;
+      createdAt: string;
+      lastSignInAt: string | null;
+      confirmed: boolean;
+    }>;
+  },
+});
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["managed-users"] });
 
