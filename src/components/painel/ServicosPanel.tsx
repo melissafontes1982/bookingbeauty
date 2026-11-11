@@ -8,6 +8,8 @@ type Draft = {
   id?: string;
   name: string;
   description: string;
+  name_en: string;
+  description_en: string;
   duration_min: number;
   buffer_min: number;
   price: number;
@@ -17,6 +19,8 @@ type Draft = {
 const emptyDraft: Draft = {
   name: "",
   description: "",
+  name_en: "",
+  description_en: "",
   duration_min: 60,
   buffer_min: 15,
   price: 0,
@@ -49,6 +53,8 @@ export function ServicosPanel() {
       const payload = {
         name: value.name,
         description: value.description || null,
+        name_en: value.name_en.trim() || null,
+        description_en: value.description_en.trim() || null,
         duration_min: value.duration_min,
         buffer_min: value.buffer_min,
         price: value.price,
@@ -106,6 +112,20 @@ export function ServicosPanel() {
             value={draft.description}
             onChange={(e) => setDraft({ ...draft, description: e.target.value })}
             placeholder="Descrição"
+            rows={2}
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm outline-none"
+          />
+          <p className="pt-1 text-xs font-semibold text-foreground/60">Versão em inglês (opcional)</p>
+          <input
+            value={draft.name_en}
+            onChange={(e) => setDraft({ ...draft, name_en: e.target.value })}
+            placeholder="Service name (English)"
+            className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm outline-none"
+          />
+          <textarea
+            value={draft.description_en}
+            onChange={(e) => setDraft({ ...draft, description_en: e.target.value })}
+            placeholder="Description (English)"
             rows={2}
             className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm outline-none"
           />
@@ -194,6 +214,8 @@ export function ServicosPanel() {
                     id: service.id,
                     name: service.name,
                     description: service.description ?? "",
+                    name_en: service.name_en ?? "",
+                    description_en: service.description_en ?? "",
                     duration_min: service.duration_min,
                     buffer_min: service.buffer_min,
                     price: Number(service.price),
