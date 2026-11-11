@@ -51,14 +51,9 @@ function BookingPage() {
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: async () => {
-      const [{ data: pros }, { data: links }] = await Promise.all([
-        supabase.from("professionals").select("id, name, bio, photo_url").eq("active", true).order("name"),
-        supabase.from("professional_services").select("professional_id, service_id"),
-      ]);
-      return (pros ?? []).map((p) => ({
-        ...p,
-        serviceIds: (links ?? []).filter((l) => l.professional_id === p.id).map((l) => l.service_id),
-      }));
+      const { data, error } = await supabase.rpc("get_public_professionals" as never);
+      if (error) throw error;
+      return ((data as unknown) ?? []) as { id: string; name: string; bio: string | null; photo_url: string | null; serviceIds: string[] }[];
     } });
   const [date, setDate] = useState<string>(todayISO());
   const [time, setTime] = useState<string | null>(null);
@@ -479,6 +474,10 @@ function BookingPage() {
                     {!serviceId ? (
                       <p className="col-span-full text-sm text-foreground/50">
                         {L("Selecione um serviço para ver os horários livres.", "Select a service to see available times.")}
+                      </p>
+                    ) : needsPro && !professionalId ? (
+                      <p className="col-span-full text-sm text-foreground/50">
+                        {L("Selecione um profissional acima para ver os horários disponíveis.", "Select a professional above to see available times.")}
                       </p>
                     ) : loadingSlots ? (
                       <p className="col-span-full text-sm text-foreground/50">{L("Buscando horários…", "Loading times…")}</p>
