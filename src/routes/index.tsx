@@ -41,7 +41,7 @@ export const Route = createFileRoute("/")({
   component: BookingPage,
 });
 
-type Booking = Awaited<ReturnType<typeof createPublicBooking>>;
+type Booking = Awaited<ReturnType<typeof createPublicBooking>> & { professionalPhone?: string | null };
 
 function BookingPage() {
   const lang = useLang();
