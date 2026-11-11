@@ -3,7 +3,12 @@ import { useEffect, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 
-const AUTHORIZED_EMAIL = "humbertobcabral@gmail.com";
+// NOVA VERSÃO:
+const AUTHORIZED_EMAILS = [
+  "humbertobcabral@gmail.com",
+  "melissafontes1982@gmail.com",
+];
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -41,7 +46,7 @@ function AuthPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      if (data.user.email?.toLowerCase() === AUTHORIZED_EMAIL) {
+      if (AUTHORIZED_EMAILS.includes(data.user.email?.toLowerCase() ?? "") {
         await supabase.rpc("claim_authorized_admin");
       }
       const { data: isAdmin } = await supabase.rpc("has_role", {
