@@ -92,6 +92,13 @@
       "when": 1794422940303,
       "tag": "0012_restrict_schedule_public_read",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794427820567,
+      "tag": "0013_restrict_professional_services_public_read",
+      "breakpoints": true
     }
   ]
 }
