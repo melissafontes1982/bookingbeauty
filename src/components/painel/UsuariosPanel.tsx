@@ -54,18 +54,33 @@ export function UsuariosPanel() {
     },
   });
 
-  const toggleAdmin = useMutation({
-    mutationFn: (vars: { userId: string; isAdmin: boolean }) => roleFn({ data: vars }),
-    onSuccess: () => {
-      setError(null);
-      setFeedback("Permissões atualizadas.");
-      refresh();
-    },
-    onError: (err) => {
-      setFeedback(null);
-      setError(messageOf(err));
-    },
-  });
+ const toggleAdmin = useMutation({
+  mutationFn: async (vars: { userId: string; isAdmin: boolean }) => {
+    if (vars.isAdmin) {
+      const { error } = await supabase
+        .from("user_roles")
+        .insert({ user_id: vars.userId, role: "admin" });
+      if (error && error.code !== "23505") throw error;
+    } else {
+      const { error } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", vars.userId)
+        .eq("role", "admin");
+      if (error) throw error;
+    }
+  },
+  onSuccess: () => {
+    setError(null);
+    setFeedback("Permissões atualizadas.");
+    refresh();
+  },
+  onError: (err) => {
+    setFeedback(null);
+    setError(messageOf(err));
+  },
+});
+
 
   const changePassword = useMutation({
     mutationFn: async (vars: { userId: string; password: string }) => {
