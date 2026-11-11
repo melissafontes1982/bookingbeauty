@@ -2,7 +2,12 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 import { supabase } from "@/integrations/supabase/client";
 
-const OWNER_EMAIL = "humbertobcabral@gmail.com";
+// NOVA VERSÃO:
+const OWNER_EMAILS = [
+  "humbertobcabral@gmail.com",
+  "melissafontes1982@gmail.com",
+];
+
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -12,7 +17,7 @@ export const Route = createFileRoute("/_authenticated")({
 
     if (error || !user) throw redirect({ to: "/auth" });
 
-    if (user.email?.toLowerCase() === OWNER_EMAIL) {
+    if (OWNER_EMAILS.includes(user.email?.toLowerCase() ?? "")) {
       await supabase.rpc("claim_authorized_admin");
     }
 
