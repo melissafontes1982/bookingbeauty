@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { formatPriceEUR } from "@/lib/schedule";
+import { useServerFn } from "@tanstack/react-start";
+import { translateService } from "@/lib/translate.functions";
 
 type Draft = {
   id?: string;
@@ -79,6 +81,29 @@ export function ServicosPanel() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-services"] }),
   });
 
+  const translateFn = useServerFn(translateService);
+  const [translating, setTranslating] = useState(false);
+  const [translateMsg, setTranslateMsg] = useState<string | null>(null);
+  async function autoTranslate() {
+    if (!draft || !draft.name.trim()) {
+      setTranslateMsg("Escreva primeiro o nome em português.");
+      return;
+    }
+    setTranslating(true);
+    setTranslateMsg(null);
+    try {
+      const r = await translateFn({ data: { name: draft.name, description: draft.description } });
+      if (r.ok) {
+        setDraft((d) => (d ? { ...d, name_en: r.name_en ?? "", description_en: r.description_en ?? "" } : d));
+        setTranslateMsg("Tradução gerada. Pode ajustar antes de salvar.");
+      } else setTranslateMsg(r.error ?? "Não foi possível traduzir.");
+    } catch {
+      setTranslateMsg("Não foi possível traduzir.");
+    } finally {
+      setTranslating(false);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -115,7 +140,18 @@ export function ServicosPanel() {
             rows={2}
             className="w-full rounded-xl border border-border bg-input px-4 py-3 text-sm outline-none"
           />
-          <p className="pt-1 text-xs font-semibold text-foreground/60">Versão em inglês (opcional)</p>
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+            <p className="text-xs font-semibold text-foreground/60">Versão em inglês (opcional)</p>
+            <button
+              type="button"
+              onClick={autoTranslate}
+              disabled={translating}
+              className="glass-soft rounded-xl px-3 py-2 text-xs font-semibold text-primary disabled:opacity-60"
+            >
+              {translating ? "A traduzir…" : "✨ Traduzir com IA"}
+            </button>
+          </div>
+          {translateMsg ? <p className="text-xs text-foreground/60">{translateMsg}</p> : null}
           <input
             value={draft.name_en}
             onChange={(e) => setDraft({ ...draft, name_en: e.target.value })}
