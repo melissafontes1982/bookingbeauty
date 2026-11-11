@@ -85,6 +85,13 @@
       "when": 1794326379076,
       "tag": "0011_public_professionals_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794422940303,
+      "tag": "0012_restrict_schedule_public_read",
+      "breakpoints": true
     }
   ]
 }
