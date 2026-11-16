@@ -14,8 +14,8 @@ export type Recommendation = {
 export const recommendServices = createServerFn({ method: "POST" })
   .inputValidator((data) => schema.parse(data))
   .handler(async ({ data }): Promise<Recommendation> => {
-    const apiKey = process.env['LOVABLE_API_KEY'];
-    if (!apiKey) return { ok: false, error: "Recomendação indisponível no momento." };
+    const { aiConfigured, generateText } = await import("./ai.server");
+    if (!aiConfigured()) return { ok: false, error: "Recomendação indisponível no momento." };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: services } = await supabaseAdmin
@@ -23,23 +23,6 @@ export const recommendServices = createServerFn({ method: "POST" })
       .select("id, name, description, duration_min")
       .eq("active", true);
     if (!services?.length) return { ok: false, error: "Ainda não há serviços disponíveis." };
-
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const { streamText } = await import("ai");
-
-    let runId: string | undefined;
-    const provider = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey,
-      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-      fetch: async (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (runId) headers.set("X-Lovable-AIG-Run-ID", runId);
-        const res = await fetch(input, { ...init, headers });
-        runId ??= res.headers.get("X-Lovable-AIG-Run-ID") ?? undefined;
-        return res;
-      },
-    });
 
     const catalog = services
       .map((s) => `- id: ${s.id} | ${s.name} (${s.duration_min} min): ${s.description ?? ""}`)
@@ -53,21 +36,7 @@ Catálogo:
 ${catalog}`;
 
     try {
-      const result = streamText({
-        model: provider.responses("openai/gpt-6-astra"),
-        system,
-        messages: [{ role: "user", content: data.needs }],
-        providerOptions: {
-          openai: {
-            store: false,
-            forceReasoning: true,
-            reasoningEffort: "low",
-            reasoningSummary: "auto",
-            include: ["reasoning.encrypted_content"],
-          },
-        },
-      });
-      const text = await result.text;
+      const text = await generateText({ system, user: data.needs, maxTokens: 800 });
       const match = text.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(match?.[0] ?? "{}") as {
         summary?: string;

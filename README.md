@@ -1,90 +1,31 @@
-# Studio Eleven
+# Studio Eleve — agenda online
 
-Atue como um desenvolvedor web especialista em sistemas de agendamento e crie a arquitetura e/ou código para uma plataforma de **Agenda Online para Massoterapia e Estética**.
+Agenda de marcações para massoterapia e estética. Página pública para clientes + painel de administração.
 
-O sistema deve conter dois módulos principais: uma **Interface Pública para Clientes** e um **Painel de Administração**.
+**Tecnologias:** TanStack Start (React, SSR) · Supabase (base de dados e autenticação) · Vercel (alojamento) · Tailwind CSS.
 
-### 1. Requisitos do Sistema:
+## Pôr a funcionar do zero
 
-#### A. Painel Administrativo (Acesso Restrito ao Profissional)
+### 1. Supabase
+1. Crie um projeto em supabase.com.
+2. Em **SQL Editor → New query**, cole o conteúdo de `supabase/migrations/20261116000000_initial_schema.sql` e carregue em **Run**.
+3. Em **Authentication → Providers → Email**, deixe a opção *Confirm email* ligada.
+4. Em **Authentication → URL Configuration**, defina *Site URL* com o endereço do site no Vercel e acrescente-o também em *Redirect URLs* (com `/**` no fim).
+5. Em **Authentication → Users → Add user**, crie o acesso de administração (marque *Auto Confirm User*). Os e-mails autorizados a ser administradores estão na função `claim_authorized_admin` (no SQL) e em `src/routes/auth.tsx` e `src/routes/_authenticated/route.tsx`.
+6. Em **Project Settings → API**, copie o *Project URL*, a chave *publishable* e a chave *secret* (service role).
 
-- **Gestão de Serviços:**
+### 2. Vercel
+1. Importe este repositório do GitHub.
+2. Em **Settings → Environment Variables**, crie as variáveis de `.env.example` (para Production **e** Preview).
+3. Faça **Deploy** (ou *Redeploy*, sem cache, depois de alterar variáveis).
 
-  - Cadastro, edição e exclusão de serviços de massoterapia e estética.
+### 3. Opcional
+- **Notificações push:** `npm run vapid` e copie os dois valores para o Vercel.
+- **IA** (traduzir serviços e recomendar serviços ao cliente): defina `AI_API_KEY` (ver `.env.example`). Defina um limite de gastos no fornecedor.
 
-  - Campos: Nome do serviço, Descrição, Duração (ex: 30min, 60min, 90min), Preço e Intervalo de tempo entre os atendimentos (para higienização da sala).
-
-- **Gestão de Clientes:**
-
-  - Cadastro manual de clientes (Nome, WhatsApp/Telefone, E-mail, Observações/Ficha de Anamnese simplificada).
-
-  - Histórico de agendamentos por cliente.
-
-- **Gestão de Horários e Agenda:**
-
-  - Configuração do horário de funcionamento (dias da semana, horário de início/fim e pausa para almoço).
-
-  - Visualização da agenda (visão diária, semanal e mensal).
-
-  - Possibilidade do administrador bloquear horários específicos (férias, imprevistos, etc.).
-
-#### B. Áreas Públicas (Agendamento para Clientes)
-
-- **Fluxo do Cliente:**
-
-  1. Escolha do serviço.
-
-  2. Escolha do dia e horário disponível (calculado dinamicamente com base nos horários livres e na duração do serviço).
-
-  3. Preenchimento de dados de contato (Nome e WhatsApp).
-
-  4. Tela de confirmação do agendamento.
-
-#### C. Integração com WhatsApp (Sem API Oficial / Via WhatsApp Web)
-
-Como o sistema **não utilizará a API Oficial do WhatsApp (API Cloud / Business API)**, o disparo deve ser feito diretamente via **link de redirecionamento (`https://wa.me/`)** ou extensão/script local:
-
-- Ao finalizar um agendamento público ou manual no painel, o sistema deve gerar um botão de ação rápida "Enviar Confirmação no WhatsApp".
-
-- Ao clicar no botão, o sistema deve abrir uma nova aba abrindo o WhatsApp Web com uma mensagem pré-formatada contendo os dados do agendamento.
-
-- **Modelo da Mensagem:**
-
-  > "Olá, *[Nome do Cliente]*! Seu agendamento para *[Nome do Serviço]* foi realizado com sucesso para o dia *[Data]* às *[Horário]*. Caso precise desmarcar ou reagendar, entre em contato conosco. Aguardamos você!"
-
-### 2. Tecnologias Recomendadas
-
-- Sugira a melhor pilha de tecnologias simples e eficientes (ex: React / Next.js / Tailwind CSS no frontend e Node.js / Supabase / Firebase no backend).
-
-- O banco de dados deve armazenar: `Serviços`, `Clientes`, `Agendamentos` e `Configurações de Horário`.
-
-### 3. Entregáveis Esperados
-
-1. A estrutura do banco de dados (schema/modelos).
-
-2. O fluxo das telas do cliente e do painel do administrador.
-
-3. O código de exemplo para geração automática do link do WhatsApp Web com os parâmetros codificados (`encodeURIComponent`).
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://studioeleve.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/38778ff6-22eb-44f7-b375-68c652753667).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
+## Desenvolver localmente
+```
+npm install
+cp .env.example .env.local   # e preencha os valores
 npm run dev
 ```

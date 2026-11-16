@@ -1,2 +1,2 @@
-export const VAPID_PUBLIC_KEY =
-  "BMt2hCIGtA4trMCuz8x5S3MDBIUH53BcrGjDeZij22A6MX_JKWNvCFNdFHdyg1pgR2MZbrCdBHD6e2t7glqObTo";
+// Chave pública VAPID (gerada com "npm run vapid"). Definida em VITE_VAPID_PUBLIC_KEY.
+export const VAPID_PUBLIC_KEY: string = import.meta.env["VITE_VAPID_PUBLIC_KEY"] ?? "";

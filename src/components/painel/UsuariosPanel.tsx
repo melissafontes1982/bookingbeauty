@@ -1,7 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 
+import {
+  createManagedUser,
+  deleteManagedUser,
+  listManagedUsers,
+  setManagedUserAdmin,
+  updateManagedUserPassword,
+} from "@/lib/admin-users.functions";
 
 function messageOf(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -9,6 +16,11 @@ function messageOf(error: unknown) {
 
 export function UsuariosPanel() {
   const queryClient = useQueryClient();
+  const listFn = useServerFn(listManagedUsers);
+  const createFn = useServerFn(createManagedUser);
+  const adminFn = useServerFn(setManagedUserAdmin);
+  const passwordFn = useServerFn(updateManagedUserPassword);
+  const removeFn = useServerFn(deleteManagedUser);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isAdmin, setIsAdmin] = useState(true);
@@ -17,23 +29,10 @@ export function UsuariosPanel() {
   const [passwordFor, setPasswordFor] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
 
- const { data: users, isLoading } = useQuery({
-  queryKey: ["managed-users"],
-  queryFn: async () => {
-    const { data, error } = await supabase
-      .from("user_roles")
-      .select("user_id, role");
-    if (error) throw error;
-    return (data ?? []).map((r) => ({
-      id: r.user_id,
-      email: r.user_id,
-      isAdmin: r.role === "admin",
-      createdAt: new Date().toISOString(),
-      lastSignInAt: null,
-      confirmed: true,
-    }));
-  },
-});
+  const { data: users, isLoading, error: loadError } = useQuery({
+    queryKey: ["managed-users"],
+    queryFn: () => listFn(),
+  });
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["managed-users"] });
 
@@ -56,33 +55,18 @@ export function UsuariosPanel() {
     },
   });
 
- const toggleAdmin = useMutation({
-  mutationFn: async (vars: { userId: string; isAdmin: boolean }) => {
-    if (vars.isAdmin) {
-      const { error } = await supabase
-        .from("user_roles")
-        .insert({ user_id: vars.userId, role: "admin" });
-      if (error && error.code !== "23505") throw error;
-    } else {
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", vars.userId)
-        .eq("role", "admin");
-      if (error) throw error;
-    }
-  },
-  onSuccess: () => {
-    setError(null);
-    setFeedback("Permissões atualizadas.");
-    refresh();
-  },
-  onError: (err) => {
-    setFeedback(null);
-    setError(messageOf(err));
-  },
-});
-
+  const toggleAdmin = useMutation({
+    mutationFn: (vars: { userId: string; isAdmin: boolean }) => adminFn({ data: vars }),
+    onSuccess: () => {
+      setError(null);
+      setFeedback("Permissões atualizadas.");
+      refresh();
+    },
+    onError: (err) => {
+      setFeedback(null);
+      setError(messageOf(err));
+    },
+  });
 
   const changePassword = useMutation({
     mutationFn: async (vars: { userId: string; password: string }) => {
@@ -132,6 +116,11 @@ export function UsuariosPanel() {
 
       {feedback ? <p className="text-xs text-brand-deep">{feedback}</p> : null}
       {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {loadError ? (
+        <p className="text-xs text-destructive">
+          Não foi possível carregar os acessos: {messageOf(loadError)}
+        </p>
+      ) : null}
 
       <form
         onSubmit={(event) => {

@@ -46,7 +46,7 @@ function AuthPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) return;
-      if (AUTHORIZED_EMAILS.includes(data.user.email?.toLowerCase() ?? "") {
+      if (AUTHORIZED_EMAILS.includes(data.user.email?.toLowerCase() ?? "")) {
         await supabase.rpc("claim_authorized_admin");
       }
       const { data: isAdmin } = await supabase.rpc("has_role", {
@@ -63,7 +63,7 @@ function AuthPage() {
     setError(null);
     setMessage(null);
 
-    if (mode === "signup" && email.trim().toLowerCase() !== AUTHORIZED_EMAIL) {
+    if (mode === "signup" && !AUTHORIZED_EMAILS.includes(email.trim().toLowerCase())) {
       setError("Novos acessos são criados pela pessoa administradora, dentro do painel.");
       setLoading(false);
       return;
@@ -74,7 +74,7 @@ function AuthPage() {
       if (error || !data.user) {
         setError("E-mail ou senha inválidos.");
       } else {
-        if (data.user.email?.toLowerCase() === AUTHORIZED_EMAIL) {
+        if (data.user.email?.toLowerCase() && AUTHORIZED_EMAILS.includes(data.user.email.toLowerCase())) {
           await supabase.rpc("claim_authorized_admin");
         }
         const { data: isAdmin } = await supabase.rpc("has_role", {

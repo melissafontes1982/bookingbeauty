@@ -13,41 +13,16 @@ export const translateService = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => schema.parse(data))
   .handler(async ({ data }): Promise<TranslateResult> => {
-    const apiKey = process.env["LOVABLE_API_KEY"];
-    if (!apiKey) return { ok: false, error: "Tradução indisponível no momento." };
-    const { createOpenAI } = await import("@ai-sdk/openai");
-    const { streamText } = await import("ai");
-    let runId: string | undefined;
-    const provider = createOpenAI({
-      baseURL: "https://ai.gateway.lovable.dev/v1",
-      apiKey,
-      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-      fetch: async (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (runId) headers.set("X-Lovable-AIG-Run-ID", runId);
-        const res = await fetch(input, { ...init, headers });
-        runId ??= res.headers.get("X-Lovable-AIG-Run-ID") ?? undefined;
-        return res;
-      },
-    });
+    const { aiConfigured, generateText } = await import("./ai.server");
+    if (!aiConfigured()) return { ok: false, error: "Tradução indisponível no momento." };
     const system =
       'You translate service names and descriptions of a beauty, aesthetics and wellness studio from Portuguese into natural, professional English as used by spas and salons. Keep it concise and do not add information. Reply ONLY with JSON: {"name_en": string, "description_en": string}. If the description is empty, return an empty string for description_en.';
     try {
-      const result = streamText({
-        model: provider.responses("openai/gpt-6-astra"),
+      const text = await generateText({
         system,
-        messages: [{ role: "user", content: `Name: ${data.name}\nDescription: ${data.description}` }],
-        providerOptions: {
-          openai: {
-            store: false,
-            forceReasoning: true,
-            reasoningEffort: "low",
-            reasoningSummary: "auto",
-            include: ["reasoning.encrypted_content"],
-          },
-        },
+        user: `Name: ${data.name}\nDescription: ${data.description}`,
+        maxTokens: 600,
       });
-      const text = await result.text;
       const parsed = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0] ?? "{}") as { name_en?: string; description_en?: string };
       if (!parsed.name_en) return { ok: false, error: "Não foi possível traduzir agora." };
       return { ok: true, name_en: parsed.name_en.trim(), description_en: (parsed.description_en ?? "").trim() };
