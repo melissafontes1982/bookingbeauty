@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 const AUTHORIZED_EMAILS = [
   "humbertobcabral@gmail.com",
   "melissafontes1982@gmail.com",
+  "hbcabral@gmail.com"
 ];
 
 
