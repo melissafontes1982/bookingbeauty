@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 const OWNER_EMAILS = [
   "humbertobcabral@gmail.com",
   "melissafontes1982@gmail.com",
+  "hbcabral@gmail.com"
 ];
 
 
