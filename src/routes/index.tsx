@@ -340,6 +340,15 @@ function BookingPage() {
                           }`}
                         >
                           <p className="text-sm font-semibold">{(lang === "en" && service.name_en) || service.name}</p>
+                          {((lang === "en" && service.description_en) || service.description) ? (
+                            <p
+                              className={`mt-1.5 whitespace-pre-line text-xs leading-relaxed ${
+                                selected ? "text-primary-foreground/85" : "text-foreground/65"
+                              }`}
+                            >
+                              {(lang === "en" && service.description_en) || service.description}
+                            </p>
+                          ) : null}
                           <p
                             className={`mt-1 text-xs ${
                               selected ? "text-primary-foreground/70" : "text-foreground/50"
