@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Lock } from "lucide-react";
+import { ChevronDown, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -50,6 +50,7 @@ function BookingPage() {
 
   const [serviceId, setServiceId] = useState<string | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const { data: professionals } = useQuery({ queryKey: ["public-professionals"], queryFn: async () => {
       const { data, error } = await supabase.rpc("get_public_professionals" as never);
       if (error) throw error;
@@ -131,15 +132,18 @@ function BookingPage() {
 
   const servicePros = (professionals ?? []).filter((p) => serviceId && p.serviceIds.includes(serviceId));
   const needsPro = servicePros.length > 0;
+  // Se o serviço só tem um profissional, fica selecionado e o cliente vai direto para o dia e hora.
+  const autoPro = servicePros.length === 1 ? (servicePros[0] ?? null) : null;
+  const activeProId = professionalId ?? autoPro?.id ?? null;
   const { data: slotData, isFetching: loadingSlots } = useQuery({
-    queryKey: ["slots", serviceId, date, professionalId],
-    enabled: Boolean(serviceId) && (!needsPro || Boolean(professionalId)),
+    queryKey: ["slots", serviceId, date, activeProId],
+    enabled: Boolean(serviceId) && (!needsPro || Boolean(activeProId)),
     queryFn: async () => {
       if (!serviceId) return { slots: [] as string[] };
       const { data, error } = await supabase.rpc("public_available_slots", {
         _service_id: serviceId,
         _date: date,
-        ...(professionalId ? { _professional_id: professionalId } : {}),
+        ...(activeProId ? { _professional_id: activeProId } : {}),
       });
       if (error) throw error;
       return { slots: (data ?? []) as string[] };
@@ -151,14 +155,14 @@ function BookingPage() {
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (!serviceId || !time || (needsPro && !professionalId)) return;
+    if (!serviceId || !time || (needsPro && !activeProId)) return;
     setSaving(true);
     setError(null);
     try {
       const fullPhone = `${countryCode}${phone.replace(/\D/g, "").replace(/^0+/, "")}`;
       const { data: rpcData, error: rpcError } = await supabase.rpc("public_create_booking", {
         _service_id: serviceId,
-        _professional_id: (professionalId ?? null) as unknown as string,
+        _professional_id: (activeProId ?? null) as unknown as string,
         _date: date,
         _time: time,
         _name: name,
@@ -321,51 +325,97 @@ function BookingPage() {
                       </a>
                     </p>
                   ) : null}
-                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="mt-3 grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
                     {(services ?? []).map((service) => {
                       const selected = service.id === serviceId;
+                      const title = (lang === "en" && service.name_en) || service.name;
+                      const desc = ((lang === "en" && service.description_en) || service.description || "").trim();
+                      const canExpand = desc.length > 70 || desc.includes("\n");
+                      const expanded = expandedId === service.id;
+                      const muted = selected ? "text-primary-foreground/80" : "text-foreground/65";
                       return (
-                        <button
+                        <div
                           key={service.id}
-                          type="button"
-                          onClick={() => {
-                            setServiceId(service.id);
-                            setProfessionalId(null);
-                            setTime(null);
-                          }}
-                          className={`rounded-2xl p-4 text-left transition-shadow ${
-                            selected
-                              ? "bg-primary text-primary-foreground shadow-lg"
-                              : "glass-soft hover:shadow-md"
+                          className={`overflow-hidden rounded-2xl transition-shadow ${
+                            selected ? "bg-primary text-primary-foreground shadow-lg" : "glass-soft hover:shadow-md"
                           }`}
                         >
-                          <p className="text-sm font-semibold">{(lang === "en" && service.name_en) || service.name}</p>
-                          {((lang === "en" && service.description_en) || service.description) ? (
-                            <p
-                              className={`mt-1.5 whitespace-pre-line text-xs leading-relaxed ${
-                                selected ? "text-primary-foreground/85" : "text-foreground/65"
+                          <button
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => {
+                              setServiceId(service.id);
+                              setProfessionalId(null);
+                              setTime(null);
+                            }}
+                            className="block w-full px-4 pb-2 pt-4 text-left"
+                          >
+                            <span className="flex items-start justify-between gap-3">
+                              <span className="text-sm font-semibold leading-snug">{title}</span>
+                              <span className="shrink-0 font-display text-base font-semibold">
+                                {formatPriceEUR(Number(service.price))}
+                              </span>
+                            </span>
+                            <span
+                              className={`mt-0.5 block text-xs ${
+                                selected ? "text-primary-foreground/70" : "text-foreground/50"
                               }`}
                             >
-                              {(lang === "en" && service.description_en) || service.description}
-                            </p>
-                          ) : null}
-                          <p
-                            className={`mt-1 text-xs ${
-                              selected ? "text-primary-foreground/70" : "text-foreground/50"
-                            }`}
-                          >
-                            {service.duration_min}min
-                          </p>
-                          <p className="mt-3 font-display text-lg font-semibold">
-                            {formatPriceEUR(Number(service.price))}
-                          </p>
-                        </button>
+                              {service.duration_min} min
+                            </span>
+                          </button>
+                          {desc ? (
+                            canExpand ? (
+                              <button
+                                type="button"
+                                aria-expanded={expanded}
+                                onClick={() => setExpandedId(expanded ? null : service.id)}
+                                className="flex min-h-11 w-full items-start gap-2 px-4 pb-3 pt-1 text-left"
+                              >
+                                <span
+                                  className={`flex-1 whitespace-pre-line text-xs leading-relaxed ${muted} ${
+                                    expanded ? "" : "line-clamp-2"
+                                  }`}
+                                >
+                                  {desc}
+                                </span>
+                                <span className="sr-only">
+                                  {expanded ? L("Ocultar descrição", "Hide description") : L("Ver descrição completa", "Show full description")}
+                                </span>
+                                <ChevronDown
+                                  aria-hidden="true"
+                                  className={`mt-0.5 size-5 shrink-0 transition-transform ${muted} ${expanded ? "rotate-180" : ""}`}
+                                />
+                              </button>
+                            ) : (
+                              <p className={`whitespace-pre-line px-4 pb-3 pt-1 text-xs leading-relaxed ${muted}`}>{desc}</p>
+                            )
+                          ) : (
+                            <div className="pb-2" />
+                          )}
+                        </div>
                       );
                     })}
                   </div>
                 </section>
 
-                {needsPro ? (
+                {autoPro ? (
+                  <section className="mt-6">
+                    <p className="text-sm font-semibold text-foreground/80">{L("Profissional", "Professional")}</p>
+                    <div className="glass-soft mt-3 flex items-center gap-3 rounded-2xl p-3">
+                      {autoPro.photo_url ? (
+                        <img src={autoPro.photo_url} alt={autoPro.name} className="size-11 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-brand/10 font-display text-base font-semibold text-brand-deep">
+                          {autoPro.name.charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="min-w-0 text-sm font-semibold">{autoPro.name}</span>
+                    </div>
+                  </section>
+                ) : null}
+
+                {needsPro && !autoPro ? (
                   <section className="mt-6">
                     <p className="text-sm font-semibold text-foreground/80">{L("Escolha o profissional", "Choose a professional")}</p>
                     <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -505,7 +555,7 @@ function BookingPage() {
                       <p className="col-span-full text-sm text-foreground/50">
                         {L("Selecione um serviço para ver os horários livres.", "Select a service to see available times.")}
                       </p>
-                    ) : needsPro && !professionalId ? (
+                    ) : needsPro && !activeProId ? (
                       <p className="col-span-full text-sm text-foreground/50">
                         {L("Selecione um profissional acima para ver os horários disponíveis.", "Select a professional above to see available times.")}
                       </p>
