@@ -7,7 +7,6 @@ import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { themeToCssVars } from "@/lib/theme";
 import { createPublicBooking, notifyNewBooking } from "@/lib/booking.functions";
-import { ServiceAdvisor } from "@/components/ServiceAdvisor";
 import { LangSwitch, longDate, useLang, weekdayShort, type Lang } from "@/lib/i18n";
 import {
   addDaysISO,
@@ -303,14 +302,25 @@ function BookingPage() {
               <>
                 <section className="mt-6">
                   <p className="text-sm font-semibold text-foreground/80">{L("Escolha o serviço", "Choose a service")}</p>
-                  <ServiceAdvisor
-                    lang={lang}
-                    onPick={(id) => {
-                      setServiceId(id);
-                      setProfessionalId(null);
-                      setTime(null);
-                    }}
-                  />
+                  {contactLink ? (
+                    <p className="mt-1 text-xs text-foreground/60">
+                      {L("Em dúvida sobre qual serviço escolher?", "Not sure which service to choose?")}{" "}
+                      <a
+                        href={buildContactWhatsAppLink(
+                          settings?.whatsapp_number ?? "",
+                          L(
+                            "Olá! Tenho uma dúvida sobre qual serviço escolher.",
+                            "Hello! I have a question about which service to choose.",
+                          ),
+                        ) ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-semibold text-brand-deep underline underline-offset-2"
+                      >
+                        {L("Fale connosco no WhatsApp", "Message us on WhatsApp")}
+                      </a>
+                    </p>
+                  ) : null}
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                     {(services ?? []).map((service) => {
                       const selected = service.id === serviceId;
