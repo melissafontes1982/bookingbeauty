@@ -317,7 +317,7 @@ function BookingPage() {
                         rel="noreferrer"
                         className="font-semibold text-brand-deep underline underline-offset-2"
                       >
-                        {L("Fale connosco no WhatsApp", "Message us on WhatsApp")}
+                        {L("Fale conosco no WhatsApp", "Message us on WhatsApp")}
                       </a>
                     </p>
                   ) : null}
