@@ -60,6 +60,8 @@ function NovaMarcacaoForm({ defaultDate, onDone }: { defaultDate: string; onDone
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [date, setDate] = useState(defaultDate);
   const [time, setTime] = useState<string | null>(null);
+  const [mode, setMode] = useState<"existing" | "new">("existing");
+  const [search, setSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
   const [name, setName] = useState("");
   const [countryCode, setCountryCode] = useState("351");
@@ -125,19 +127,30 @@ function NovaMarcacaoForm({ defaultDate, onDone }: { defaultDate: string; onDone
     },
   });
 
+  // Lista de clientes cadastrados filtrada pela pesquisa (nome ou telefone).
+  const registered = useMemo(() => {
+    const q = normalize(search.trim());
+    const d = search.replace(/\D/g, "");
+    return (clients ?? []).filter(
+      (c) => !q || normalize(c.name).includes(q) || (d.length >= 3 && c.phone.includes(d)),
+    );
+  }, [clients, search]);
+
+  // No modo "novo cliente", avisa se o que se escreve parece alguém que já existe.
   const suggestions = useMemo(() => {
-    if (selectedClient) return [];
+    if (mode !== "new") return [];
     const q = normalize(name.trim());
     const d = phone.replace(/\D/g, "");
     if (q.length < 2 && d.length < 4) return [];
     return (clients ?? [])
       .filter((c) => (q.length >= 2 && normalize(c.name).includes(q)) || (d.length >= 4 && c.phone.includes(d)))
       .slice(0, 4);
-  }, [clients, name, phone, selectedClient]);
+  }, [clients, name, phone, mode]);
 
-  const finalName = selectedClient ? selectedClient.name : name.trim();
-  const finalPhone = selectedClient
-    ? selectedClient.phone
+  const usingExisting = mode === "existing";
+  const finalName = usingExisting ? (selectedClient?.name ?? "") : name.trim();
+  const finalPhone = usingExisting
+    ? (selectedClient?.phone ?? "")
     : `${countryCode}${phone.replace(/\D/g, "").replace(/^0+/, "")}`;
   const phoneDigits = finalPhone.replace(/\D/g, "");
   const canSubmit = Boolean(serviceId && time && proReady && finalName.length >= 2 && phoneDigits.length >= 8);
@@ -275,24 +288,82 @@ function NovaMarcacaoForm({ defaultDate, onDone }: { defaultDate: string; onDone
         </div>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3">
         <span className="eyebrow">Cliente</span>
-        {selectedClient ? (
-          <div className="glass-soft flex items-center justify-between gap-3 rounded-xl p-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{selectedClient.name}</p>
-              <p className="text-xs text-foreground/60">+{selectedClient.phone}</p>
-            </div>
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-foreground/5 p-1">
+          {([
+            ["existing", "Cliente cadastrado"],
+            ["new", "Novo cliente"],
+          ] as const).map(([value, label]) => (
             <button
+              key={value}
               type="button"
-              onClick={() => setSelectedClient(null)}
-              className="min-h-11 shrink-0 rounded-xl px-3 text-xs font-semibold underline underline-offset-2"
+              aria-pressed={mode === value}
+              onClick={() => {
+                setMode(value);
+                if (value === "new") setSelectedClient(null);
+              }}
+              className={`min-h-11 rounded-lg px-2 text-sm font-semibold ${
+                mode === value ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground/70"
+              }`}
             >
-              Trocar
+              {label}
             </button>
-          </div>
+          ))}
+        </div>
+
+        {usingExisting ? (
+          selectedClient ? (
+            <div className="glass-soft flex items-center justify-between gap-3 rounded-xl p-3">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">{selectedClient.name}</p>
+                <p className="text-xs text-foreground/60">+{selectedClient.phone}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedClient(null)}
+                className="min-h-11 shrink-0 rounded-xl px-3 text-xs font-semibold underline underline-offset-2"
+              >
+                Trocar
+              </button>
+            </div>
+          ) : (clients ?? []).length === 0 ? (
+            <p className="text-xs text-foreground/70">
+              Ainda não há clientes cadastrados. Use “Novo cliente”.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              <input
+                type="search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Procurar por nome ou telefone"
+                autoComplete="off"
+                className={inputClass}
+              />
+              <div className="max-h-56 overflow-y-auto rounded-xl border border-border p-1">
+                {registered.length ? (
+                  registered.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setSelectedClient(c)}
+                      className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-3 text-left text-sm hover:bg-foreground/5"
+                    >
+                      <span className="truncate font-semibold">{c.name}</span>
+                      <span className="shrink-0 text-xs text-foreground/60">+{c.phone}</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="px-3 py-3 text-xs text-foreground/70">
+                    Nenhum cliente encontrado. Use “Novo cliente” para o registar.
+                  </p>
+                )}
+              </div>
+            </div>
+          )
         ) : (
-          <>
+          <div className="space-y-2">
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -322,6 +393,7 @@ function NovaMarcacaoForm({ defaultDate, onDone }: { defaultDate: string; onDone
                 className={`${inputClass} min-w-0 flex-1`}
               />
             </div>
+            <p className="text-xs text-foreground/60">O cliente fica registado automaticamente.</p>
             {suggestions.length ? (
               <div className="rounded-xl border border-border p-2">
                 <p className="px-2 pb-1 text-xs text-foreground/60">Já é cliente? Toque para escolher:</p>
@@ -329,7 +401,10 @@ function NovaMarcacaoForm({ defaultDate, onDone }: { defaultDate: string; onDone
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => setSelectedClient(c)}
+                    onClick={() => {
+                      setSelectedClient(c);
+                      setMode("existing");
+                    }}
                     className="flex min-h-11 w-full items-center justify-between gap-3 rounded-lg px-2 text-left text-sm hover:bg-foreground/5"
                   >
                     <span className="truncate font-semibold">{c.name}</span>
@@ -338,7 +413,7 @@ function NovaMarcacaoForm({ defaultDate, onDone }: { defaultDate: string; onDone
                 ))}
               </div>
             ) : null}
-          </>
+          </div>
         )}
       </div>
 
