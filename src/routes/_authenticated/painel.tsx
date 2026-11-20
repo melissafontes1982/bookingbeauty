@@ -6,6 +6,7 @@ import { useState } from "react";
 import { AgendaPanel } from "@/components/painel/AgendaPanel";
 import { ClientesPanel } from "@/components/painel/ClientesPanel";
 import { ConfiguracoesPanel } from "@/components/painel/ConfiguracoesPanel";
+import { DashboardPanel } from "@/components/painel/DashboardPanel";
 import { HorariosPanel } from "@/components/painel/HorariosPanel";
 import { ProfissionaisPanel } from "@/components/painel/ProfissionaisPanel";
 import { ServicosPanel } from "@/components/painel/ServicosPanel";
@@ -27,9 +28,10 @@ export const Route = createFileRoute("/_authenticated/painel")({
   component: PainelPage,
 });
 
-type Tab = "agenda" | "profissionais" | "servicos" | "clientes" | "horarios" | "usuarios" | "configuracoes";
+type Tab = "dashboard" | "agenda" | "profissionais" | "servicos" | "clientes" | "horarios" | "usuarios" | "configuracoes";
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: "dashboard", label: "Dashboard" },
   { id: "agenda", label: "Agenda" },
   { id: "profissionais", label: "Profissionais" },
   { id: "servicos", label: "Serviços" },
@@ -42,7 +44,7 @@ const TABS: { id: Tab; label: string }[] = [
 function PainelPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("agenda");
+  const [tab, setTab] = useState<Tab>("dashboard");
 
   const { data: settings } = useQuery({
     queryKey: ["general-settings"],
@@ -140,6 +142,7 @@ function PainelPage() {
         </nav>
 
         <div className="glass mt-4 rounded-3xl p-4 sm:mt-6 sm:p-7">
+          {tab === "dashboard" ? <DashboardPanel onNavigate={setTab} /> : null}
           {tab === "agenda" ? <AgendaPanel /> : null}
           {tab === "profissionais" ? <ProfissionaisPanel /> : null}
           {tab === "servicos" ? <ServicosPanel /> : null}
