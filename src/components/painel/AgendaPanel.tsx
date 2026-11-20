@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { LembretesSection } from "./LembretesSection";
+import { NovaMarcacaoDialog } from "./NovaMarcacaoDialog";
 import { LangToggle } from "./LangToggle";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -33,6 +34,7 @@ export function AgendaPanel() {
   const [view, setView] = useState<View>("dia");
   const [anchor, setAnchor] = useState(todayISO());
   const [langs, setLangs] = useState<Record<string, MsgLang>>({});
+  const [newOpen, setNewOpen] = useState(false);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: anchor, to: anchor };
@@ -142,6 +144,13 @@ export function AgendaPanel() {
           </h2>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setNewOpen(true)}
+            className="min-h-11 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-primary-foreground shadow-sm"
+          >
+            + Nova marcação
+          </button>
           <button
             type="button"
             onClick={() => setAnchor(view === "mes" ? shiftMonth(anchor, -1) : addDaysISO(anchor, view === "dia" ? -1 : -7))}
@@ -371,6 +380,15 @@ export function AgendaPanel() {
           </div>
         ))
       )}
+      <NovaMarcacaoDialog
+        open={newOpen}
+        onOpenChange={setNewOpen}
+        defaultDate={anchor}
+        onCreated={(date) => {
+          setView("dia");
+          setAnchor(date);
+        }}
+      />
     </div>
   );
 }
