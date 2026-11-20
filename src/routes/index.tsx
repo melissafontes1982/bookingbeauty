@@ -1,5 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChevronDown, Lock } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { ChevronDown } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
@@ -185,16 +185,6 @@ function BookingPage() {
 
   return (
     <div className="min-h-screen text-foreground" style={themeToCssVars(settings)}>
-      {/* Acesso discreto ao painel, no canto inferior direito */}
-      <Link
-        to="/auth"
-        aria-label={L("Acesso ao painel", "Staff login")}
-        title={L("Acesso ao painel", "Staff login")}
-        className="glass fixed bottom-4 right-4 z-50 grid size-11 place-items-center rounded-full text-foreground/60 shadow-lg transition hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-        style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
-      >
-        <Lock className="size-5" aria-hidden="true" />
-      </Link>
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
         <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
