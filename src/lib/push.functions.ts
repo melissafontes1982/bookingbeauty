@@ -5,6 +5,5 @@ export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
     const { notifyProfessionals } = await import("./push.server");
-    await notifyProfessionals("🔔 Teste", "As notificações estão a funcionar neste telemóvel.");
-    return { ok: true };
+    return await notifyProfessionals("🔔 Teste", "As notificações estão a funcionar neste telemóvel.");
   });
