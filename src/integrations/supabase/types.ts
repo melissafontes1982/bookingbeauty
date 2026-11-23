@@ -461,6 +461,8 @@ export type Database = {
     }
     Functions: {
       claim_authorized_admin: { Args: never; Returns: boolean }
+      slots_remarcar: { Args: { _id: string; _date: string }; Returns: string[] }
+      reagendar_marcacao: { Args: { _id: string; _date: string; _time: string }; Returns: Json }
       get_public_professionals: { Args: never; Returns: Json }
       has_role: {
         Args: {
