@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
 import { LembretesSection } from "./LembretesSection";
+import { ExcluirOuRemarcarDialog, type RemarcarTarget } from "./ExcluirOuRemarcarDialog";
 import { NovaMarcacaoDialog } from "./NovaMarcacaoDialog";
 import { LangToggle } from "./LangToggle";
 import { supabase } from "@/integrations/supabase/client";
@@ -35,6 +36,7 @@ export function AgendaPanel() {
   const [anchor, setAnchor] = useState(todayISO());
   const [langs, setLangs] = useState<Record<string, MsgLang>>({});
   const [newOpen, setNewOpen] = useState(false);
+  const [target, setTarget] = useState<RemarcarTarget | null>(null);
 
   const range = useMemo(() => {
     if (view === "dia") return { from: anchor, to: anchor };
@@ -366,10 +368,7 @@ export function AgendaPanel() {
                   ) : null}
                   <button
                     type="button"
-                    onClick={() => {
-                      if (!window.confirm("Tem certeza que deseja apagar este agendamento do calendário?")) return;
-                      remove.mutate(item.id);
-                    }}
+                    onClick={() => setTarget(item)}
                     className="flex-1 rounded-xl bg-destructive/10 px-4 py-3 text-xs sm:flex-none sm:py-2 font-semibold text-destructive"
                   >
                     Excluir marcação
@@ -380,6 +379,11 @@ export function AgendaPanel() {
           </div>
         ))
       )}
+      <ExcluirOuRemarcarDialog
+        target={target}
+        onClose={() => setTarget(null)}
+        onDelete={(id) => remove.mutate(id)}
+      />
       <NovaMarcacaoDialog
         open={newOpen}
         onOpenChange={setNewOpen}
